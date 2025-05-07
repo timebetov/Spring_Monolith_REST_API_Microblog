@@ -1,15 +1,16 @@
-package com.github.timebetov.microblog.dto;
+package com.github.timebetov.microblog.dto.moment;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
-public class MomentDTO {
+@AllArgsConstructor
+@Builder
+public class RequestMomentDTO {
 
     private String text;
-    private Long authorId;
     private String visibility;
 }

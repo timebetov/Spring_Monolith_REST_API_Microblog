@@ -1,21 +1,19 @@
-package com.github.timebetov.microblog.dto;
+package com.github.timebetov.microblog.dto.user;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserDTO {
+@Builder
+public class UpdateUserDTO {
 
     private String username;
     private String email;
-
-    @JsonIgnore
     private String password;
-
     private String bio;
     private String picture;
     private String role;

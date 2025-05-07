@@ -1,10 +1,13 @@
 package com.github.timebetov.microblog.service;
 
-import com.github.timebetov.microblog.dto.MomentDTO;
+import com.github.timebetov.microblog.dto.moment.MomentDTO;
+import com.github.timebetov.microblog.dto.moment.RequestMomentDTO;
 import com.github.timebetov.microblog.exception.ResourceNotFoundException;
 import com.github.timebetov.microblog.model.Moment;
 import com.github.timebetov.microblog.model.User;
 import com.github.timebetov.microblog.repository.MomentDao;
+import com.github.timebetov.microblog.repository.UserDao;
+import com.github.timebetov.microblog.service.impl.MomentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +30,9 @@ public class MomentServiceTest {
 
     @MockitoBean
     private MomentDao momentDao;
+
+    @MockitoBean
+    private UserDao userDao;
 
     @Autowired
     private MomentService momentService;
@@ -52,29 +58,47 @@ public class MomentServiceTest {
                 .visibility(Moment.Visibility.PUBLIC)
                 .build();
 
-        this.momentDTO = new MomentDTO();
-        this.momentDTO.setText("Hello World this is a test text");
-        this.momentDTO.setAuthorId(1L);
-        this.momentDTO.setVisibility("PUBLIC");
+        this.momentDTO = MomentDTO.builder()
+                .text("Hello World this is a test text")
+                .authorId(1L)
+                .visibility("PUBLIC")
+                .build();
     }
 
     @Test
-    @DisplayName("Should create a new Moment")
+    @DisplayName("createMoment: Should create a new Moment")
     public void createNewMomentTest() {
 
+        RequestMomentDTO reqMomentDTO = RequestMomentDTO.builder()
+                .text("Hello World this is a test text")
+                .visibility("PUBLIC")
+                .build();
+
+        when(userDao.findById(1L)).thenReturn(Optional.of(author));
         when(momentDao.save(any(Moment.class))).thenReturn(moment);
 
-        MomentDTO createdMoment = momentService.createMoment(momentDTO);
+        MomentDTO createdMoment = momentService.createMoment(1L, reqMomentDTO);
 
         assertNotNull(createdMoment, "Created moment should not be null");
         assertEquals("Hello World this is a test text", createdMoment.getText());
         assertEquals(1L, moment.getAuthor().getUserId());
         assertEquals(Moment.Visibility.PUBLIC, moment.getVisibility());
+
+        verify(userDao, times(1)).findById(1L);
         verify(momentDao, times(1)).save(any(Moment.class));
     }
 
     @Test
-    @DisplayName("Should return a Moment by given UUID")
+    @DisplayName("createMomentInvalidAuthor: Should throw an ResourceNotFoundException")
+    public void createMomentInvalidAuthorTest() {
+
+        when(userDao.findById(2L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> momentService.createMoment(2L, new RequestMomentDTO()));
+        verify(userDao, times(1)).findById(2L);
+    }
+
+    @Test
+    @DisplayName("getMomentById: Should return a Moment by given UUID")
     public void getMomentByIdTest() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.of(moment));
@@ -90,18 +114,16 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid UUID")
+    @DisplayName("getMomentInvalidUUID: Should throw an ResourceNotFoundException")
     public void getMomentByIdInvalidUUIDTest() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
-
         assertThrows(ResourceNotFoundException.class, () -> momentService.getMomentById(UUID.randomUUID()));
-
         verify(momentDao, times(1)).findById(any(UUID.class));
     }
 
     @Test
-    @DisplayName("Should return list of all moments by author id")
+    @DisplayName("getMomentsByAuthor: Should return list of all moments by author id")
     public void getMomentsByAuthorIdTest() {
 
         when(momentDao.findMomentByAuthor_UserId(1L)).thenReturn(List.of(moment));
@@ -116,7 +138,7 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should return empty list")
+    @DisplayName("getMomentsByAuthorIdEmptyList: Should return empty list")
     public void getMomentsByAuthorIdEmptyListTest() {
 
         when(momentDao.findMomentByAuthor_UserId(1L)).thenReturn(List.of());
@@ -128,12 +150,13 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should return updated MomentDTO")
+    @DisplayName("updateMoment: Should return updated MomentDTO")
     public void updateMomentTest() {
 
-        MomentDTO toUpdate = new MomentDTO();
-        toUpdate.setText("Hello World this is an updated test text".toUpperCase());
-        toUpdate.setVisibility("DRAFT");
+        RequestMomentDTO requestMomentDTO = RequestMomentDTO.builder()
+                .text("Hello World this is an updated test text".toUpperCase())
+                .visibility("DRAFT")
+                .build();
 
         moment.setText("Hello World this is an updated test text".toUpperCase());
         moment.setVisibility(Moment.Visibility.DRAFT);
@@ -141,7 +164,7 @@ public class MomentServiceTest {
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.of(moment));
         when(momentDao.save(any(Moment.class))).thenReturn(moment);
 
-        MomentDTO updatedMoment = momentService.updateMoment(UUID.randomUUID(), toUpdate);
+        MomentDTO updatedMoment = momentService.updateMoment(UUID.randomUUID(), requestMomentDTO);
 
         assertNotNull(updatedMoment, "Updated moments should not be null");
         assertEquals("Hello World this is an updated test text".toUpperCase(), updatedMoment.getText());
@@ -152,7 +175,7 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid UUID")
+    @DisplayName("updateMomentInvalidUUID: Should throw an ResourceNotFoundException")
     public void updateMomentByIdInvalidUUIDTest() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
@@ -161,7 +184,7 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should delete moment and Not throw an exception")
+    @DisplayName("deleteMoment: Should delete moment without Exception")
     public void deleteMomentTest() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.of(moment));
@@ -171,7 +194,7 @@ public class MomentServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Deleting Moment Invalid UUID")
+    @DisplayName("deleteMomentInvalidUUID: Should throw an ResourceNotFoundException")
     public void deleteMomentByIdInvalidUUIDTest() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());

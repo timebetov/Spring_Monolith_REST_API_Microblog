@@ -1,10 +1,13 @@
 package com.github.timebetov.microblog.service;
 
-import com.github.timebetov.microblog.dto.UserDTO;
+import com.github.timebetov.microblog.dto.user.CreateUserDTO;
+import com.github.timebetov.microblog.dto.user.UpdateUserDTO;
+import com.github.timebetov.microblog.dto.user.UserDTO;
 import com.github.timebetov.microblog.exception.AlreadyExistsException;
 import com.github.timebetov.microblog.exception.ResourceNotFoundException;
 import com.github.timebetov.microblog.model.User;
 import com.github.timebetov.microblog.repository.UserDao;
+import com.github.timebetov.microblog.service.impl.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,10 +38,12 @@ public class UserServiceTest {
 
     @BeforeEach
     public void setup() {
-        this.userDTO = new UserDTO();
-        userDTO.setUsername("alexkey");
-        userDTO.setEmail("alex@gmail.com");
-        userDTO.setPassword("Alexkey2@25pwd");
+        this.userDTO = UserDTO.builder()
+                .id(1L)
+                .username("alexkey")
+                .email("alexkey@gmail.com")
+                .role(User.Role.USER.name())
+                .build();
 
         this.user = User.builder()
                 .userId(1L)
@@ -49,43 +55,64 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should create a new User")
+    @DisplayName("createUser: Should create a brand new User")
     public void createUserTest() {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("alexkey")
+                .email("alex@gmail.com")
+                .password("Alexkey2@25pwd")
+                .build();
 
         when(userDao.save(any(User.class))).thenReturn(user);
 
-        UserDTO createdUser = userService.createUser(userDTO);
+        UserDTO createdUser = userService.createUser(createUserDTO);
 
         assertNotNull(createdUser, "UserDTO should not be null");
         assertEquals("alexkey", createdUser.getUsername());
         assertEquals("alex@gmail.com", createdUser.getEmail());
         assertEquals(User.Role.USER.name(), createdUser.getRole());
+        assertNull(createdUser.getBio());
+        assertNull(createdUser.getPicture());
+        assertEquals(0, createdUser.getMoments());
 
         verify(userDao, times(1)).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Should throw an Email Already Exists Exception")
+    @DisplayName("createUserInvalidEmail: Should throw an AlreadyExistsException")
     public void createUserEmailExistsExceptionTest() {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("alexkey")
+                .email("alex@gmail.com")
+                .password("Alexkey2@25pwd")
+                .build();
 
         when(userDao.findByEmail(anyString())).thenReturn(Optional.of(user));
 
-        assertThrows(AlreadyExistsException.class, () -> userService.createUser(userDTO));
+        assertThrows(AlreadyExistsException.class, () -> userService.createUser(createUserDTO));
         verify(userDao, times(1)).findByEmail(anyString());
     }
 
     @Test
-    @DisplayName("Should throw an Username Already Exists Exception")
+    @DisplayName("createUserInvalidUsername: Should throw an AlreadyExistsException")
     public void createUserUsernameExistsExceptionTest() {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("alexkey")
+                .email("alex@gmail.com")
+                .password("Alexkey2@25pwd")
+                .build();
 
         when(userDao.findByUsername(anyString())).thenReturn(Optional.of(user));
 
-        assertThrows(AlreadyExistsException.class, () -> userService.createUser(userDTO));
+        assertThrows(AlreadyExistsException.class, () -> userService.createUser(createUserDTO));
         verify(userDao, times(1)).findByUsername(anyString());
     }
 
     @Test
-    @DisplayName("Should return list of all existed users in DB")
+    @DisplayName("getAllUsers: Should return List containing 1 User")
     public void getAllUsersTest() {
 
         when(userDao.findAll()).thenReturn(List.of(user));
@@ -97,7 +124,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return empty list")
+    @DisplayName("getAllUsers: Should return empty list")
     public void getAllUsersEmptyTest() {
 
         when(userDao.findAll()).thenReturn(List.of());
@@ -109,7 +136,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return user by username")
+    @DisplayName("getUserByUsername: Should return user by given username")
     public void getUserByUsernameTest() {
 
         when(userDao.findByUsername(any(String.class))).thenReturn(Optional.of(user));
@@ -124,7 +151,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid Username")
+    @DisplayName("getUserInvalidUsername: Should throw an ResourceNotFoundException")
     public void getUserByNonValidUsernameExceptionTest() {
 
         when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
@@ -134,7 +161,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return user by given email")
+    @DisplayName("getUserByEmail: Should return user by given email")
     public void getUserByEmailTest() {
 
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.of(user));
@@ -149,7 +176,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid Email")
+    @DisplayName("getUserInvalidEmail: Should throw an ResourceNotFoundException")
     public void getUserByNonValidEmailExceptionTest() {
 
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.empty());
@@ -158,7 +185,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return user by given id")
+    @DisplayName("getUser: Should return user by given id")
     public void getUserByIdTest() {
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
@@ -173,7 +200,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid User Id")
+    @DisplayName("getUserInvalidId: Should throw an ResourceNotFoundException")
     public void getUserByIdInvalidUserIdExceptionTest() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
@@ -182,44 +209,54 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return updated UserDTO")
+    @DisplayName("updateUser: Should return updated UserDTO")
     public void updateUserTest() {
 
-        UserDTO toUpdate = new UserDTO();
-        toUpdate.setUsername("updatedalexkey");
-        toUpdate.setEmail("updalex@gmail.com");
-        toUpdate.setRole("ADMIN");
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("updatedalexkey")
+                .email("updalex@gmail.com")
+                .password("newpassword")
+                .role("ADMIN")
+                .build();
 
-        this.user.setUsername("updatedalexkey");
-        this.user.setEmail("updalex@gmail.com");
-        this.user.setRole(User.Role.ADMIN);
+        User updatedUser = User.builder()
+                .username("updatedalexkey")
+                .email("updalex@gmail.com")
+                .password("newpassword")
+                .role(User.Role.ADMIN)
+                .build();
+
+        updatedUser.setUpdatedAt(LocalDateTime.now());
+        updatedUser.setUpdatedBy("SYSTEM");
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
-        when(userDao.save(any(User.class))).thenReturn(user);
+        when(userDao.save(any(User.class))).thenReturn(updatedUser);
 
-        UserDTO updatedUser = userService.updateUser(1L, toUpdate);
+        UserDTO updatedUserDTO = userService.updateUser(1L, updateUserDTO);
 
         assertNotNull(updatedUser);
-        assertEquals("updatedalexkey", updatedUser.getUsername());
-        assertEquals("updalex@gmail.com", updatedUser.getEmail());
-        assertEquals(User.Role.ADMIN.name(), updatedUser.getRole());
+        assertEquals("updatedalexkey", updatedUserDTO.getUsername());
+        assertEquals("updalex@gmail.com", updatedUserDTO.getEmail());
+        assertEquals(User.Role.ADMIN.name(), updatedUserDTO.getRole());
+        assertNotNull(updatedUserDTO.getUpdatedAt());
+        assertEquals("SYSTEM", updatedUserDTO.getUpdatedBy());
 
         verify(userDao, times(1)).findById(1L);
         verify(userDao, times(1)).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid Id to Update")
+    @DisplayName("updateUserInvalidId: Should throw an ResourceNotFoundException")
     public void updateUserByIdInvalidUserIdExceptionTest() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
 
-        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(0L, new UserDTO()));
+        assertThrows(ResourceNotFoundException.class, () -> userService.updateUser(0L, new UpdateUserDTO()));
         verify(userDao, times(1)).findById(0L);
     }
 
     @Test
-    @DisplayName("Should throw an Already Exists Exception Invalid Username to Update")
+    @DisplayName("updateUserUsernameAlreadyExists: Should throw an AlreadyExistsException")
     public void updateUserByIdUsernameAlreadyExistsExceptionTest() {
 
         User toUpdate = User.builder()
@@ -228,17 +265,25 @@ public class UserServiceTest {
                 .role(User.Role.USER)
                 .build();
 
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("alexkey")
+                .email("updalex@gmail.com")
+                .password("newpassword")
+                .role("ADMIN")
+                .build();
+
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
+
         when(userDao.findByUsername(any(String.class))).thenReturn(Optional.of(user));
 
-        assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, userDTO));
+        assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
         verify(userDao, times(1)).findByUsername(any(String.class));
     }
 
     @Test
-    @DisplayName("Should throw an Already Exists Exception Invalid Email to Update")
+    @DisplayName("updateUserEmailAddressAlreadyExists: Should throw an AlreadyExistsException")
     public void updateUserByIdEmailAlreadyExistsExceptionTest() {
 
         User toUpdate = User.builder()
@@ -247,10 +292,17 @@ public class UserServiceTest {
                 .role(User.Role.USER)
                 .build();
 
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("alexkey")
+                .email("alex@gmail.com")
+                .password("newpassword")
+                .role("ADMIN")
+                .build();
+
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.of(user));
 
-        assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, userDTO));
+        assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
         verify(userDao, times(1)).findByUsername(any(String.class));
@@ -258,7 +310,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should return True after Deleting User By Id")
+    @DisplayName("deleteUser: Should return true")
     public void deleteUserByIdTest() {
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
@@ -270,12 +322,11 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("Should throw an Resource Not Found Exception Invalid Id to Delete")
+    @DisplayName("deleteUserInvalidId: Should throw an ResourceNotFoundException")
     public void deleteUserInvalidUserIdExceptionTest() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(0L));
         verify(userDao, times(1)).findById(0L);
     }
-
 }
