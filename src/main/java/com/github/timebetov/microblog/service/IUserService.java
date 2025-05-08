@@ -8,12 +8,12 @@ import java.util.List;
 
 public interface IUserService {
 
-    UserDTO createUser(CreateUserDTO userDetails);
+    void createUser(CreateUserDTO userDetails);
     List<UserDTO> getAllUsers();
     UserDTO getByUsername(String username);
     UserDTO getById(long userId);
     UserDTO getByEmail(String email);
-    UserDTO updateUser(Long userId, UpdateUserDTO userDetails);
+    void updateUser(Long userId, UpdateUserDTO userDetails);
     boolean deleteUser(Long userId);
 
     boolean followUser(Long followerId, Long followedId);

@@ -23,7 +23,7 @@ public class UserService implements IUserService {
     private final UserDao userDao;
 
     @Override
-    public UserDTO createUser(CreateUserDTO userDetails) {
+    public void createUser(CreateUserDTO userDetails) {
 
         if (userDao.findByUsername(userDetails.getUsername()).isPresent()) {
             throw new AlreadyExistsException("User", "username", userDetails.getUsername());
@@ -36,7 +36,7 @@ public class UserService implements IUserService {
         newUser.setCreatedAt(LocalDateTime.now());
         newUser.setCreatedBy("SYSTEM");
         newUser.setRole(User.Role.USER);
-        return UserMapper.mapToUserDTO(userDao.save(newUser));
+        userDao.save(newUser);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class UserService implements IUserService {
     }
 
     @Override
-    public UserDTO updateUser(Long userId, UpdateUserDTO userDetails) {
+    public void updateUser(Long userId, UpdateUserDTO userDetails) {
 
         User updatedUser = userDao.findById(userId).orElseThrow(
                 () -> new ResourceNotFoundException("User", "id", String.valueOf(userId))
@@ -95,7 +95,7 @@ public class UserService implements IUserService {
 
         updatedUser.setUpdatedAt(LocalDateTime.now());
         updatedUser.setUpdatedBy("SYSTEM");
-        return UserMapper.mapToUserDTO(userDao.save(updatedUser));
+        userDao.save(updatedUser);
     }
 
     @Override

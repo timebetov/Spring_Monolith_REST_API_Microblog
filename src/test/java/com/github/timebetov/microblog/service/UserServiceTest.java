@@ -11,12 +11,12 @@ import com.github.timebetov.microblog.service.impl.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,7 +55,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("createUser: Should create a brand new User")
+    @DisplayName("createUser: Should save new user when username and email are unique")
     public void createUserTest() {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
@@ -64,19 +64,21 @@ public class UserServiceTest {
                 .password("Alexkey2@25pwd")
                 .build();
 
-        when(userDao.save(any(User.class))).thenReturn(user);
+        when(userDao.findByUsername(createUserDTO.getUsername())).thenReturn(Optional.empty());
+        when(userDao.findByEmail(createUserDTO.getEmail())).thenReturn(Optional.empty());
 
-        UserDTO createdUser = userService.createUser(createUserDTO);
-
-        assertNotNull(createdUser, "UserDTO should not be null");
-        assertEquals("alexkey", createdUser.getUsername());
-        assertEquals("alex@gmail.com", createdUser.getEmail());
-        assertEquals(User.Role.USER.name(), createdUser.getRole());
-        assertNull(createdUser.getBio());
-        assertNull(createdUser.getPicture());
-        assertEquals(0, createdUser.getMoments());
-
+        assertDoesNotThrow(() -> userService.createUser(createUserDTO));
         verify(userDao, times(1)).save(any(User.class));
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userDao).save(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+        assertEquals("alexkey", savedUser.getUsername());
+        assertEquals("alex@gmail.com", savedUser.getEmail());
+        assertEquals(User.Role.USER, savedUser.getRole());
+        assertNotNull(savedUser.getCreatedAt());
+        assertEquals("SYSTEM", savedUser.getCreatedBy());
     }
 
     @Test
@@ -209,7 +211,7 @@ public class UserServiceTest {
     }
 
     @Test
-    @DisplayName("updateUser: Should return updated UserDTO")
+    @DisplayName("updateUser: Should update user if exists and data is valid and unique")
     public void updateUserTest() {
 
         UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
@@ -219,30 +221,28 @@ public class UserServiceTest {
                 .role("ADMIN")
                 .build();
 
-        User updatedUser = User.builder()
-                .username("updatedalexkey")
-                .email("updalex@gmail.com")
-                .password("newpassword")
-                .role(User.Role.ADMIN)
-                .build();
-
-        updatedUser.setUpdatedAt(LocalDateTime.now());
-        updatedUser.setUpdatedBy("SYSTEM");
-
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
-        when(userDao.save(any(User.class))).thenReturn(updatedUser);
+        when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
+        when(userDao.findByEmail(any(String.class))).thenReturn(Optional.empty());
 
-        UserDTO updatedUserDTO = userService.updateUser(1L, updateUserDTO);
-
-        assertNotNull(updatedUser);
-        assertEquals("updatedalexkey", updatedUserDTO.getUsername());
-        assertEquals("updalex@gmail.com", updatedUserDTO.getEmail());
-        assertEquals(User.Role.ADMIN.name(), updatedUserDTO.getRole());
-        assertNotNull(updatedUserDTO.getUpdatedAt());
-        assertEquals("SYSTEM", updatedUserDTO.getUpdatedBy());
+        assertDoesNotThrow(() -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
+        verify(userDao, times(1)).findByUsername(any(String.class));
+        verify(userDao, times(1)).findByEmail(any(String.class));
+
         verify(userDao, times(1)).save(any(User.class));
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userDao).save(userCaptor.capture());
+
+        User savedUser = userCaptor.getValue();
+        assertEquals("updatedalexkey", savedUser.getUsername());
+        assertEquals("updalex@gmail.com", savedUser.getEmail());
+        assertEquals("newpassword", savedUser.getPassword());
+        assertEquals(User.Role.ADMIN, savedUser.getRole());
+        assertNotNull(savedUser.getUpdatedAt());
+        assertEquals("SYSTEM", savedUser.getUpdatedBy());
     }
 
     @Test
@@ -300,6 +300,7 @@ public class UserServiceTest {
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
+        when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.of(user));
 
         assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, updateUserDTO));
