@@ -5,6 +5,7 @@ import com.github.timebetov.microblog.dto.user.CreateUserDTO;
 import com.github.timebetov.microblog.dto.user.UpdateUserDTO;
 import com.github.timebetov.microblog.dto.user.UserDTO;
 import com.github.timebetov.microblog.service.IUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,7 +22,7 @@ public class UserController {
     private final IUserService userService;
 
     @PostMapping("/create")
-    public ResponseEntity<ResponseDTO> registerUser(@RequestBody CreateUserDTO requestDTO) {
+    public ResponseEntity<ResponseDTO> registerUser(@Valid @RequestBody CreateUserDTO requestDTO) {
 
         userService.createUser(requestDTO);
         return ResponseEntity
