@@ -3,6 +3,7 @@ package com.github.timebetov.microblog.service;
 import com.github.timebetov.microblog.dto.moment.MomentDTO;
 import com.github.timebetov.microblog.dto.moment.RequestMomentDTO;
 import com.github.timebetov.microblog.exception.ResourceNotFoundException;
+import com.github.timebetov.microblog.mapper.MomentMapper;
 import com.github.timebetov.microblog.model.Moment;
 import com.github.timebetov.microblog.model.User;
 import com.github.timebetov.microblog.repository.MomentDao;
@@ -11,6 +12,7 @@ import com.github.timebetov.microblog.service.impl.MomentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -77,7 +79,11 @@ public class MomentServiceTest {
         when(userDao.findById(1L)).thenReturn(Optional.of(author));
         when(momentDao.save(any(Moment.class))).thenReturn(moment);
 
-        MomentDTO createdMoment = momentService.createMoment(1L, reqMomentDTO);
+        momentService.createMoment(1L, reqMomentDTO);
+
+        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
+        verify(momentDao).save(momentCaptor.capture());
+        Moment createdMoment = momentCaptor.getValue();
 
         assertNotNull(createdMoment, "Created moment should not be null");
         assertEquals("Hello World this is a test text", createdMoment.getText());
@@ -164,7 +170,10 @@ public class MomentServiceTest {
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.of(moment));
         when(momentDao.save(any(Moment.class))).thenReturn(moment);
 
-        MomentDTO updatedMoment = momentService.updateMoment(UUID.randomUUID(), requestMomentDTO);
+        momentService.updateMoment(UUID.randomUUID(), requestMomentDTO);
+        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
+        verify(momentDao).save(momentCaptor.capture());
+        MomentDTO updatedMoment = MomentMapper.mapToMomentDTO(momentCaptor.getValue());
 
         assertNotNull(updatedMoment, "Updated moments should not be null");
         assertEquals("Hello World this is an updated test text".toUpperCase(), updatedMoment.getText());

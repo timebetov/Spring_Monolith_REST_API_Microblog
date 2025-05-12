@@ -24,7 +24,8 @@ public class MomentService implements IMomentService {
     private final MomentDao momentDao;
     private final UserDao userDao;
 
-    public MomentDTO createMoment(Long authorId, RequestMomentDTO momentDetails) {
+    @Override
+    public void createMoment(Long authorId, RequestMomentDTO momentDetails) {
 
         User author = userDao.findById(authorId).orElseThrow(
                 () -> new ResourceNotFoundException("User", "userId", String.valueOf(authorId)));
@@ -35,9 +36,10 @@ public class MomentService implements IMomentService {
         momentToSave.setAuthor(author);
 
         Moment savedMoment = momentDao.save(momentToSave);
-        return MomentMapper.mapToMomentDTO(savedMoment);
+        MomentMapper.mapToMomentDTO(savedMoment);
     }
 
+    @Override
     public MomentDTO getMomentById(UUID momentUUId) {
 
         Moment foundMoment = momentDao.findById(momentUUId).orElseThrow(
@@ -46,6 +48,7 @@ public class MomentService implements IMomentService {
         return MomentMapper.mapToMomentDTO(foundMoment);
     }
 
+    @Override
     public List<MomentDTO> getByAuthorId(Long authorId) {
 
         List<MomentDTO> moments = new ArrayList<>();
@@ -54,7 +57,8 @@ public class MomentService implements IMomentService {
         return moments;
     }
 
-    public MomentDTO updateMoment(UUID momentId, RequestMomentDTO momentDetails) {
+    @Override
+    public void updateMoment(UUID momentId, RequestMomentDTO momentDetails) {
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(
                 () -> new ResourceNotFoundException("Moment", "id", momentId.toString())
@@ -63,9 +67,10 @@ public class MomentService implements IMomentService {
         foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility()));
         foundMoment.setText(momentDetails.getText());
         Moment savedMoment = momentDao.save(foundMoment);
-        return MomentMapper.mapToMomentDTO(savedMoment);
+        MomentMapper.mapToMomentDTO(savedMoment);
     }
 
+    @Override
     public void deleteMoment(UUID momentId) {
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(

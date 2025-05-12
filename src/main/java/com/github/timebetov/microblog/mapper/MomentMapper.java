@@ -19,7 +19,7 @@ public class MomentMapper {
 
     public static Moment mapRequestMomentDTOToMoment(RequestMomentDTO requestMomentDTO, Moment moment) {
 
-        moment.setText(requestMomentDTO.getText());
+        moment.setText(requestMomentDTO.getText().trim());
         moment.setVisibility(Moment.Visibility.valueOf(requestMomentDTO.getVisibility()));
         return moment;
     }

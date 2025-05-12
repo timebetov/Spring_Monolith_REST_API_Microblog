@@ -43,7 +43,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<?> notFoundHandler(ResourceNotFoundException e, WebRequest request) {
+    public ResponseEntity<ErrorResponseDTO> notFoundHandler(ResourceNotFoundException e, WebRequest request) {
 
         ErrorResponseDTO result = ErrorResponseDTO.builder()
                 .apiPath(request.getDescription(false).replace("uri=", ""))
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(AlreadyExistsException.class)
-    public ResponseEntity<?> alreadyExistsHandler(AlreadyExistsException e, WebRequest request) {
+    public ResponseEntity<ErrorResponseDTO> alreadyExistsHandler(AlreadyExistsException e, WebRequest request) {
 
         ErrorResponseDTO result = ErrorResponseDTO.builder()
                 .apiPath(request.getDescription(false).replace("uri=", ""))
@@ -67,7 +67,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<?> exceptionHandler(Exception e, WebRequest request) {
+    public ResponseEntity<ErrorResponseDTO> exceptionHandler(Exception e, WebRequest request) {
 
         ErrorResponseDTO result = ErrorResponseDTO.builder()
                 .apiPath(request.getDescription(false).replace("uri=", ""))

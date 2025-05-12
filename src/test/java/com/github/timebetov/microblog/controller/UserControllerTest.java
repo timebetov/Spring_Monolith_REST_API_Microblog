@@ -5,22 +5,22 @@ import com.github.timebetov.microblog.dto.user.CreateUserDTO;
 import com.github.timebetov.microblog.dto.user.UpdateUserDTO;
 import com.github.timebetov.microblog.model.User;
 import com.github.timebetov.microblog.repository.UserDao;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -29,49 +29,34 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
-@AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional
 public class UserControllerTest {
 
-    private static MockHttpServletRequest request;
-
-    @PersistenceContext
-    private EntityManager entityManager;
+    @Autowired
+    private WebApplicationContext context;
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private UserController userController;
-
-    @Autowired
     private UserDao userDao;
 
-    private User user;
-
-    @Autowired
     private MockMvc mockMvc;
+
     @Autowired
     private ObjectMapper objectMapper;
 
-    @BeforeAll
-    public static void setup() {
-        request = new MockHttpServletRequest();
-    }
-
     @BeforeEach
-    void setUp() {
-        user = new User();
-        user.setUsername("testing");
-        user.setEmail("testing@test.com");
-        user.setPassword("passwordTesting");
-        user.setCreatedAt(LocalDateTime.now());
-        user.setCreatedBy("SYSTEM");
-        user.setRole(User.Role.ADMIN);
+    void init() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .defaultRequest(MockMvcRequestBuilders.get("/").contextPath("/api"))
+                .build();
 
         jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
-                "VALUES (2, 'test1', 'test1@test.com', 'passwordTest1', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
+                "VALUES (3, 'admin', 'admin@test.com', 'passwordAdmin', CURRENT_TIMESTAMP, 'SYSTEM', 'ADMIN')");
+        jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
+                "VALUES (2, 'user', 'user@test.com', 'passwordUser', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
     }
 
     @Test
@@ -81,7 +66,7 @@ public class UserControllerTest {
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("benjamin")
                 .email("benjamin@test.com")
-                .password("passwordTestingBenjamin2025")
+                .password("passwordTesting2025")
                 .build();
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
@@ -92,7 +77,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.message", is("User registered successfully")));
 
         Optional<User> verifyUser = userDao.findByUsername("benjamin");
-        assertNotNull(verifyUser, "User should not be null");
+        assertTrue(verifyUser.isPresent(), "User not found");
     }
 
     @Test
@@ -100,7 +85,7 @@ public class UserControllerTest {
     void createUserUsernameAlreadyExists() throws Exception {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
-                .username("test1")
+                .username("user")
                 .email("someemail@test.com")
                 .password("passwordTesting2025")
                 .build();
@@ -119,7 +104,7 @@ public class UserControllerTest {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("user012345")
-                .email("test1@test.com")
+                .email("user@test.com")
                 .password("passwordTesting2025")
                 .build();
 
@@ -190,9 +175,6 @@ public class UserControllerTest {
     @DisplayName("getAllUsers: Should return 2 users")
     void getAllUsersTest() throws Exception {
 
-        entityManager.persist(user);
-        entityManager.flush();
-
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -206,8 +188,8 @@ public class UserControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/2"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.username", is("test1")))
-                .andExpect(jsonPath("$.email", is("test1@test.com")))
+                .andExpect(jsonPath("$.username", is("user")))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
                 .andExpect(jsonPath("$.role", is("USER")));
     }
 
@@ -225,16 +207,12 @@ public class UserControllerTest {
     @DisplayName("getUserByUsername: Should return User with given username")
     void getUserByUsernameTest() throws Exception {
 
-        entityManager.persist(user);
-        entityManager.flush();
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@testing"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@user"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.username", is("testing")))
-                .andExpect(jsonPath("$.email", is("testing@test.com")))
-                .andExpect(jsonPath("$.id", is(1)))
-                .andExpect(jsonPath("$.role", is("ADMIN")));
+                .andExpect(jsonPath("$.username", is("user")))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
+                .andExpect(jsonPath("$.role", is("USER")));
     }
 
     @Test
@@ -251,10 +229,10 @@ public class UserControllerTest {
     @DisplayName("getUserByEmail: Should return User with given email")
     void getUserByEmailTest() throws Exception {
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/test1@test.com"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/user@test.com"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.email", is("test1@test.com")))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
                 .andExpect(jsonPath("$.id", is(2)))
                 .andExpect(jsonPath("$.role", is("USER")));
     }
@@ -286,7 +264,7 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.message", is("User updated successfully")));
 
         Optional<User> updatedUser = userDao.findById(2L);
-        assertNotNull(updatedUser, "Updated user is null");
+        assertTrue(updatedUser.isPresent(), "User not found");
         assertEquals("updatedUsername", updatedUser.get().getUsername(), "username was not updated");
         assertEquals("updatedBio", updatedUser.get().getBio(), "bio was not updated");
     }
@@ -308,10 +286,7 @@ public class UserControllerTest {
     @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Username already taken")
     void updateUserUsernameAlreadyTakenTest() throws Exception {
 
-        entityManager.persist(user);
-        entityManager.flush();
-
-        UpdateUserDTO dto = UpdateUserDTO.builder().username("testing").build();
+        UpdateUserDTO dto = UpdateUserDTO.builder().username("admin").build();
 
         mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -324,11 +299,7 @@ public class UserControllerTest {
     @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Email already taken")
     void updateUserEmailAlreadyTakenTest() throws Exception {
 
-        entityManager.persist(user);
-        entityManager.flush();
-
-        UpdateUserDTO dto = UpdateUserDTO.builder().email("testing@test.com").build();
-
+        UpdateUserDTO dto = UpdateUserDTO.builder().email("admin@test.com").build();
         mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
@@ -360,6 +331,6 @@ public class UserControllerTest {
     @AfterEach
     void tearDown() {
         jdbcTemplate.execute("DELETE FROM user_follows");
-        jdbcTemplate.execute("DELETE FROM users; ALTER TABLE users ALTER COLUMN user_id RESTART WITH 1");
+        jdbcTemplate.execute("DELETE FROM users");
     }
 }

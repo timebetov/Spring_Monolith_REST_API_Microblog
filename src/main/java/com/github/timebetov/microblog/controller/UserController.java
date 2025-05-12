@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/api/users", produces = {MediaType.APPLICATION_JSON_VALUE})
+@RequestMapping(value = "/users", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
 public class UserController {
 
