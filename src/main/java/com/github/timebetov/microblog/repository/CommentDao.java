@@ -1,6 +1,6 @@
 package com.github.timebetov.microblog.repository;
 
-import com.github.timebetov.microblog.model.Comment;
+import com.github.timebetov.microblog.models.Comment;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 

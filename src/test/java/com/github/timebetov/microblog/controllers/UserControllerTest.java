@@ -1,0 +1,336 @@
+package com.github.timebetov.microblog.controllers;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.timebetov.microblog.dtos.user.CreateUserDTO;
+import com.github.timebetov.microblog.dtos.user.UpdateUserDTO;
+import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.repository.UserDao;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.WebApplicationContext;
+
+import java.util.Optional;
+
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
+public class UserControllerTest {
+
+    @Autowired
+    private WebApplicationContext context;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private UserDao userDao;
+
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void init() {
+        this.mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .defaultRequest(MockMvcRequestBuilders.get("/").contextPath("/api"))
+                .build();
+
+        jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
+                "VALUES (3, 'admin', 'admin@test.com', 'passwordAdmin', CURRENT_TIMESTAMP, 'SYSTEM', 'ADMIN')");
+        jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
+                "VALUES (2, 'user', 'user@test.com', 'passwordUser', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.CREATED")
+    void createUser() throws Exception {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("benjamin")
+                .email("benjamin@test.com")
+                .password("passwordTesting2025")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(createUserDTO)))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message", is("User registered successfully")));
+
+        Optional<User> verifyUser = userDao.findByUsername("benjamin");
+        assertTrue(verifyUser.isPresent(), "User not found");
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST - Username already exists")
+    void createUserUsernameAlreadyExists() throws Exception {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("user")
+                .email("someemail@test.com")
+                .password("passwordTesting2025")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createUserDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.BAD_REQUEST.name())));
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST - Email already exists")
+    void createUserEmailAlreadyExists() throws Exception {
+
+        CreateUserDTO createUserDTO = CreateUserDTO.builder()
+                .username("user012345")
+                .email("user@test.com")
+                .password("passwordTesting2025")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createUserDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Not valid Email")
+    void createUserInvalidEmail() throws Exception {
+
+        CreateUserDTO invalidEmailDTO = CreateUserDTO.builder()
+                .username("validUsername")
+                .email("invalidEmailAtTestDotcom")
+                .password("passwordTesting")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalidEmailDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorDetails.email", is("Email is not a valid")));
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Password length less than 8")
+    void createUserPasswordTooShort() throws Exception {
+
+        CreateUserDTO emptyPasswordDTO = CreateUserDTO.builder()
+                .username("validUsername")
+                .email("validEmail@test.com")
+                .password("")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(emptyPasswordDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.BAD_REQUEST.name())))
+                .andExpect(jsonPath("$.errorDetails.password", is("Password must be between 8 and 20 characters long")));
+    }
+
+    @Test
+    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Password length more than 20")
+    void createUserPasswordTooLong() throws Exception {
+
+        CreateUserDTO longPasswordDTO = CreateUserDTO.builder()
+                .username("validUsername")
+                .email("validEmail@test.com")
+                .password("qweasdzxc123rtyfghvbn094586")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(longPasswordDTO)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.BAD_REQUEST.name())))
+                .andExpect(jsonPath("$.errorDetails.password", is("Password must be between 8 and 20 characters long")));
+    }
+
+    @Test
+    @DisplayName("getAllUsers: Should return 2 users")
+    void getAllUsersTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$", hasSize(2)));
+    }
+
+    @Test
+    @DisplayName("getUserById: Should return user with given ID")
+    void getUserByIdTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/2"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.username", is("user")))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
+                .andExpect(jsonPath("$.role", is("USER")));
+    }
+
+    @Test
+    @DisplayName("getUserById: Should return HttpStatus.NOT_FOUND")
+    void getUserByIdNotFoundTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/1040"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.NOT_FOUND.name())));
+    }
+
+    @Test
+    @DisplayName("getUserByUsername: Should return User with given username")
+    void getUserByUsernameTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@user"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.username", is("user")))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
+                .andExpect(jsonPath("$.role", is("USER")));
+    }
+
+    @Test
+    @DisplayName("getUserByUsername: Should return HttpStatus.NOT_FOUND & Username not found")
+    void getUserByUsernameNotFoundTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@notexisting"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.NOT_FOUND.name())));
+    }
+
+    @Test
+    @DisplayName("getUserByEmail: Should return User with given email")
+    void getUserByEmailTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/user@test.com"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.email", is("user@test.com")))
+                .andExpect(jsonPath("$.id", is(2)))
+                .andExpect(jsonPath("$.role", is("USER")));
+    }
+
+    @Test
+    @DisplayName("getUserByEmail: Should return HttpStatus.NOT_FOUND & Email not found")
+    void getUserByEmailNotFoundTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/notexisting@mail.com"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorCode", is(HttpStatus.NOT_FOUND.name())));
+    }
+
+    @Test
+    @DisplayName("updateUser: Should return HttpStatus.OK & Update user in DB")
+    void updateUserTest() throws Exception {
+
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("updatedUsername")
+                .bio("updatedBio")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateUserDTO)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message", is("User updated successfully")));
+
+        Optional<User> updatedUser = userDao.findById(2L);
+        assertTrue(updatedUser.isPresent(), "User not found");
+        assertEquals("updatedUsername", updatedUser.get().getUsername(), "username was not updated");
+        assertEquals("updatedBio", updatedUser.get().getBio(), "bio was not updated");
+    }
+
+    @Test
+    @DisplayName("updateUser: Should return HttpStatus.NOT_FOUND Invalid user_id")
+    void updateUserInvalidUserIdTest() throws Exception {
+
+        UpdateUserDTO dto = UpdateUserDTO.builder().build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/1040")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Username already taken")
+    void updateUserUsernameAlreadyTakenTest() throws Exception {
+
+        UpdateUserDTO dto = UpdateUserDTO.builder().username("admin").build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Email already taken")
+    void updateUserEmailAlreadyTakenTest() throws Exception {
+
+        UpdateUserDTO dto = UpdateUserDTO.builder().email("admin@test.com").build();
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @DisplayName("deleteUser: Should return HttpStatus.OK & Affect in DB")
+    void deleteUserTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/2"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        Optional<User> user = userDao.findById(2L);
+        assertFalse(user.isPresent(), "User was not deleted");
+    }
+
+    @Test
+    @DisplayName("deleteUser: Should return HttpStatus.NOT_FOUND - Id not found")
+    void deleteUserNotFoundTest() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/1040"))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @AfterEach
+    void tearDown() {
+        jdbcTemplate.execute("DELETE FROM user_follows");
+        jdbcTemplate.execute("DELETE FROM users");
+    }
+}

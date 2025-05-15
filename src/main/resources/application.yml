@@ -1,7 +1,7 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/${DB_NAME:microblog}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:microblog}
     username: ${DB_USER:root}
     password: ${DB_USER_PWD:root}
   jpa:
@@ -12,9 +12,15 @@ spring:
       hibernate:
         format_sql: true
   application:
-    name: Microblog
+    name: ${APP_NAME:Microblog}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: "/api"
+
+app:
+  jwt:
+    secretKey: ${JWT_SECRET_KEY:Zw1dsOA1hqSKlX9PVREovrt2S0h8AydmIvb4FwC/Ij4=}
+    expiration: ${JWT_SECRET_EXPIRATION:86400000}
+    issuer: ${JWT_SECRET_ISSUER:microblog}
