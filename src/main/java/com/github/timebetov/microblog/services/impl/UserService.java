@@ -27,12 +27,6 @@ public class UserService implements IUserService {
     private final PasswordEncoder pwdEncoder;
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userDao.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User: " + username + " not found"));
-    }
-
-    @Override
     public void createUser(CreateUserDTO userDetails) {
 
         if (userDao.findByUsername(userDetails.getUsername()).isPresent()) {

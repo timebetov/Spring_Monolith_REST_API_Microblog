@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class FollowerService implements IFollowerService {
+public class FollowService implements IFollowerService {
 
     private final UserDao userDao;
 

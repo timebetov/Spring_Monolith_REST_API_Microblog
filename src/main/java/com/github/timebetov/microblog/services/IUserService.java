@@ -7,7 +7,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.util.List;
 
-public interface IUserService extends UserDetailsService {
+public interface IUserService {
 
     void createUser(CreateUserDTO userDetails);
     List<UserDTO> getAllUsers();

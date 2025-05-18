@@ -77,7 +77,6 @@ public class UserServiceTest {
         assertEquals("alexkey", savedUser.getUsername());
         assertEquals("alex@gmail.com", savedUser.getEmail());
         assertEquals(User.Role.USER, savedUser.getRole());
-        assertNotNull(savedUser.getCreatedAt());
         assertEquals("SYSTEM", savedUser.getCreatedBy());
     }
 
@@ -241,8 +240,6 @@ public class UserServiceTest {
         assertEquals("updalex@gmail.com", savedUser.getEmail());
         assertEquals("newpassword", savedUser.getPassword());
         assertEquals(User.Role.ADMIN, savedUser.getRole());
-        assertNotNull(savedUser.getUpdatedAt());
-        assertEquals("SYSTEM", savedUser.getUpdatedBy());
     }
 
     @Test

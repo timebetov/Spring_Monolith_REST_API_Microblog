@@ -1,108 +1,106 @@
-//package com.github.timebetov.microblog.service;
-//
-//import com.github.timebetov.microblog.dto.moment.MomentDTO;
-//import com.github.timebetov.microblog.dto.moment.RequestMomentDTO;
-//import com.github.timebetov.microblog.exception.ResourceNotFoundException;
-//import com.github.timebetov.microblog.mapper.MomentMapper;
-//import com.github.timebetov.microblog.model.Moment;
-//import com.github.timebetov.microblog.model.User;
-//import com.github.timebetov.microblog.repository.MomentDao;
-//import com.github.timebetov.microblog.repository.UserDao;
-//import com.github.timebetov.microblog.service.impl.MomentService;
-//import org.junit.jupiter.api.BeforeEach;
-//import org.junit.jupiter.api.DisplayName;
-//import org.junit.jupiter.api.Test;
-//import org.mockito.ArgumentCaptor;
-//import org.springframework.beans.factory.annotation.Autowired;
-//import org.springframework.boot.test.context.SpringBootTest;
-//import org.springframework.test.context.ActiveProfiles;
-//import org.springframework.test.context.bean.override.mockito.MockitoBean;
-//
-//import java.util.List;
-//import java.util.Optional;
-//import java.util.UUID;
-//
-//import static org.junit.jupiter.api.Assertions.*;
-//import static org.mockito.ArgumentMatchers.any;
-//import static org.mockito.Mockito.*;
-//
-//@SpringBootTest
-//@ActiveProfiles("test")
-//public class MomentServiceTest {
-//
-//    @MockitoBean
-//    private MomentDao momentDao;
-//
-//    @MockitoBean
-//    private UserDao userDao;
-//
-//    @Autowired
-//    private MomentService momentService;
-//
-//    MomentDTO momentDTO;
-//    Moment moment;
-//    User author;
-//
-//    @BeforeEach
-//    void setUp() {
-//
-//        this.author = User.builder()
-//                .userId(1L)
-//                .username("richard")
-//                .email("richard@gmail.com")
-//                .role(User.Role.USER)
-//                .build();
-//
-//        this.moment = Moment.builder()
-//                .momentId(UUID.randomUUID())
-//                .text("Hello World this is a test text")
-//                .author(author)
-//                .visibility(Moment.Visibility.PUBLIC)
-//                .build();
-//
-//        this.momentDTO = MomentDTO.builder()
-//                .text("Hello World this is a test text")
-//                .authorId(1L)
-//                .visibility("PUBLIC")
-//                .build();
-//    }
-//
-//    @Test
-//    @DisplayName("createMoment: Should create a new Moment")
-//    public void createNewMomentTest() {
-//
-//        RequestMomentDTO reqMomentDTO = RequestMomentDTO.builder()
-//                .text("Hello World this is a test text")
-//                .visibility("PUBLIC")
-//                .build();
-//
-//        when(userDao.findById(1L)).thenReturn(Optional.of(author));
-//        when(momentDao.save(any(Moment.class))).thenReturn(moment);
-//
-//        momentService.createMoment(1L, reqMomentDTO);
-//
-//        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
-//        verify(momentDao).save(momentCaptor.capture());
-//        Moment createdMoment = momentCaptor.getValue();
-//
-//        assertNotNull(createdMoment, "Created moment should not be null");
-//        assertEquals("Hello World this is a test text", createdMoment.getText());
-//        assertEquals(1L, moment.getAuthor().getUserId());
-//        assertEquals(Moment.Visibility.PUBLIC, moment.getVisibility());
-//
-//        verify(userDao, times(1)).findById(1L);
-//        verify(momentDao, times(1)).save(any(Moment.class));
-//    }
-//
-//    @Test
-//    @DisplayName("createMomentInvalidAuthor: Should throw an ResourceNotFoundException")
-//    public void createMomentInvalidAuthorTest() {
-//
-//        when(userDao.findById(2L)).thenReturn(Optional.empty());
-//        assertThrows(ResourceNotFoundException.class, () -> momentService.createMoment(2L, new RequestMomentDTO()));
-//        verify(userDao, times(1)).findById(2L);
-//    }
-//
+package com.github.timebetov.microblog.services;
+
+import com.github.timebetov.microblog.dtos.moment.MomentDTO;
+import com.github.timebetov.microblog.dtos.moment.RequestMomentDTO;
+import com.github.timebetov.microblog.exceptions.ResourceNotFoundException;
+import com.github.timebetov.microblog.models.Moment;
+import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.repository.MomentDao;
+import com.github.timebetov.microblog.repository.UserDao;
+import com.github.timebetov.microblog.services.impl.MomentService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+@ActiveProfiles("test")
+public class MomentServiceTest {
+
+    @MockitoBean
+    private MomentDao momentDao;
+
+    @MockitoBean
+    private UserDao userDao;
+
+    @Autowired
+    private MomentService momentService;
+
+    MomentDTO momentDTO;
+    Moment moment;
+    User author;
+
+    @BeforeEach
+    void setUp() {
+
+        this.author = User.builder()
+                .userId(1L)
+                .username("richard")
+                .email("richard@gmail.com")
+                .role(User.Role.USER)
+                .build();
+
+        this.moment = Moment.builder()
+                .momentId(UUID.randomUUID())
+                .text("Hello World this is a test text")
+                .author(author)
+                .visibility(Moment.Visibility.PUBLIC)
+                .build();
+
+        this.momentDTO = MomentDTO.builder()
+                .text("Hello World this is a test text")
+                .authorId(1L)
+                .visibility("PUBLIC")
+                .build();
+    }
+
+    @Test
+    @DisplayName("createMoment: Should create a new Moment")
+    public void createNewMomentTest() {
+
+        RequestMomentDTO reqMomentDTO = RequestMomentDTO.builder()
+                .text("Hello World this is a test text")
+                .visibility("PUBLIC")
+                .build();
+
+        when(userDao.findById(1L)).thenReturn(Optional.of(author));
+        when(momentDao.save(any(Moment.class))).thenReturn(moment);
+
+        momentService.createMoment(1L, reqMomentDTO);
+
+        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
+        verify(momentDao).save(momentCaptor.capture());
+        Moment createdMoment = momentCaptor.getValue();
+
+        assertNotNull(createdMoment, "Created moment should not be null");
+        assertEquals("Hello World this is a test text", createdMoment.getText());
+        assertEquals(1L, moment.getAuthor().getUserId());
+        assertEquals(Moment.Visibility.PUBLIC, moment.getVisibility());
+
+        verify(userDao, times(1)).findById(1L);
+        verify(momentDao, times(1)).save(any(Moment.class));
+    }
+
+    @Test
+    @DisplayName("createMomentInvalidAuthor: Should throw an ResourceNotFoundException")
+    public void createMomentInvalidAuthorTest() {
+
+        when(userDao.findById(2L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> momentService.createMoment(2L, new RequestMomentDTO()));
+        verify(userDao, times(1)).findById(2L);
+    }
+
 //    @Test
 //    @DisplayName("getMomentById: Should return a Moment by given UUID")
 //    public void getMomentByIdTest() {
@@ -210,4 +208,4 @@
 //        assertThrows(ResourceNotFoundException.class, () -> momentService.deleteMoment(UUID.randomUUID()));
 //        verify(momentDao, times(1)).findById(any(UUID.class));
 //    }
-//}
+}

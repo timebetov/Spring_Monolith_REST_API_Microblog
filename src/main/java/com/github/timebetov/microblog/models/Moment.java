@@ -1,5 +1,7 @@
 package com.github.timebetov.microblog.models;
 
+import com.github.timebetov.microblog.dtos.user.CurrentUserContext;
+import com.github.timebetov.microblog.services.impl.FollowService;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -16,7 +18,26 @@ import java.util.UUID;
 public class Moment extends BaseEntity {
 
     public enum Visibility {
-        PUBLIC, DRAFT, FOLLOWERS_ONLY
+        PUBLIC {
+            @Override
+            public boolean canBeViewedBy(CurrentUserContext currentUser, Long authorId, boolean isFollower) {
+                return true;
+            }
+        },
+        DRAFT {
+            @Override
+            public boolean canBeViewedBy(CurrentUserContext currentUser, Long authorId, boolean isFollower) {
+                return currentUser.isAdmin() || currentUser.getUserId().equals(authorId);
+            }
+        },
+        FOLLOWERS_ONLY {
+            @Override
+            public boolean canBeViewedBy(CurrentUserContext currentUser, Long authorId, boolean isFollower) {
+                return currentUser.isAdmin() || currentUser.getUserId().equals(authorId) || isFollower;
+            }
+        };
+
+        public abstract boolean canBeViewedBy(CurrentUserContext currentUser, Long authorId, boolean isFollower);
     }
 
     @Id

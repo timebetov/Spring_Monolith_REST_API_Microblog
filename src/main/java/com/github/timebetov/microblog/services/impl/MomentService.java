@@ -2,6 +2,7 @@ package com.github.timebetov.microblog.services.impl;
 
 import com.github.timebetov.microblog.dtos.moment.MomentDTO;
 import com.github.timebetov.microblog.dtos.moment.RequestMomentDTO;
+import com.github.timebetov.microblog.dtos.user.CurrentUserContext;
 import com.github.timebetov.microblog.exceptions.ResourceNotFoundException;
 import com.github.timebetov.microblog.mappers.MomentMapper;
 import com.github.timebetov.microblog.models.Moment;
@@ -10,9 +11,11 @@ import com.github.timebetov.microblog.repository.MomentDao;
 import com.github.timebetov.microblog.repository.UserDao;
 import com.github.timebetov.microblog.services.IMomentService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,7 +25,7 @@ public class MomentService implements IMomentService {
 
     private final MomentDao momentDao;
     private final UserDao userDao;
-    private final FollowerService followerService;
+    private final FollowService followService;
 
     @Override
     public void createMoment(Long authorId, RequestMomentDTO momentDetails) {
@@ -56,18 +59,40 @@ public class MomentService implements IMomentService {
      */
 
     @Override
-    public List<MomentDTO> getMoments(Long authorId, String visibility) {
+    public List<MomentDTO> getMoments(Long authorId, String visibility, CurrentUserContext currentUser) {
 
-        Moment.Visibility type = Moment.Visibility.valueOf(
-                visibility == null ? "PUBLIC" : visibility);
+        if (currentUser == null || currentUser.getUserId() == null) {
+            throw new BadCredentialsException("User is not logged in");
+        }
 
-//        if (type.equals(Moment.Visibility.FOLLOWERS_ONLY)) {
-//            if (!followerService.isFollowing(currentUser, authorId) && !isAdmin && !isAuthor) {
-//                throw new AccessDeniedException("You must be a follower");
-//            }
-//        }
-        return List.of();
+        Moment.Visibility type = (visibility != null)
+                ? Moment.Visibility.valueOf(visibility.toUpperCase())
+                : Moment.Visibility.PUBLIC;
+
+        List<Moment> moments = (authorId != null)
+                ? momentDao.findMomentByAuthor_UserId(authorId)
+                : (List<Moment>) momentDao.findAll();
+
+        if (authorId != null) {
+            boolean isFollower = followService.isFollowing(currentUser.getUserId(), authorId);
+            return moments.stream()
+                    .filter(moment -> moment.getVisibility() == type)
+                    .filter(moment -> moment.getVisibility().canBeViewedBy(currentUser, authorId, isFollower))
+                    .map(MomentMapper::mapToMomentDTO)
+                    .toList();
+        } else {
+            return moments.stream()
+                    .filter(moment -> moment.getVisibility() == type)
+                    .filter(moment -> {
+                        Long momentAuthorId = moment.getAuthor().getUserId();
+                        boolean isFollower = followService.isFollowing(currentUser.getUserId(), momentAuthorId);
+                        return moment.getVisibility().canBeViewedBy(currentUser, momentAuthorId, isFollower);
+                    })
+                    .map(MomentMapper::mapToMomentDTO)
+                    .toList();
+        }
     }
+
 
     @Override
     public MomentDTO getMomentById(UUID momentUUId) {
