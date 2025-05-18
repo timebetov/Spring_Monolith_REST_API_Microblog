@@ -2,6 +2,9 @@ package com.github.timebetov.microblog.configs;
 
 import com.github.timebetov.microblog.exceptionHandlers.AccessDenyHandler;
 import com.github.timebetov.microblog.exceptionHandlers.AuthEntryPointHandler;
+import com.github.timebetov.microblog.filters.JwtTokenGeneratorFilter;
+import com.github.timebetov.microblog.filters.JwtTokenValidatorFilter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,23 +12,32 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 @Configuration
+@RequiredArgsConstructor
 public class MicroblogSecurityConfig {
+
+    private final JwtTokenGeneratorFilter jwtGeneratorFilter;
+    private final JwtTokenValidatorFilter jwtValidatorFilter;
 
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
+
+        http    // Session Related Configurations
+                .sessionManagement(smc -> smc.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http    // CSRF -> Cross Site Request Forgery
                 .csrf(AbstractHttpConfigurer::disable); // Disabled CSRF protection
 
         http    // Routing
                 .authorizeHttpRequests((req) -> req
-                        .requestMatchers("/auth/login", "/users/create", "/error").permitAll()
+                        .requestMatchers("/auth/login", "/users/create", "/error", "/auth/authenticate").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -42,6 +54,11 @@ public class MicroblogSecurityConfig {
                     ehc.accessDeniedHandler(new AccessDenyHandler());
                     ehc.authenticationEntryPoint(new AuthEntryPointHandler());
                 });
+
+        http    // Filters
+                .addFilterBefore(jwtValidatorFilter, BasicAuthenticationFilter.class)
+                .addFilterAfter(jwtGeneratorFilter, BasicAuthenticationFilter.class);
+
         return http.build();
     }
 
