@@ -30,7 +30,7 @@ public class JwtUtils {
 
     @PostConstruct
     private void init() {
-//        this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
+        this.secretKey = Keys.hmacShaKeyFor(jwtSecretKey.getBytes(StandardCharsets.UTF_8));
     }
 
     private String generateToken(Map<String, Object> extraClaims, String username) {
