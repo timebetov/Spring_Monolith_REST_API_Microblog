@@ -37,8 +37,11 @@ public class JwtTokenValidatorFilter extends OncePerRequestFilter {
                                     FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            String jwt = request.getHeader(AppConstants.JWT_HEADER);
-            if (null != jwt) {
+            String token = request.getHeader(AppConstants.JWT_HEADER);
+
+            if (null != token) {
+
+                String jwt = token.substring("Bearer ".length());
 
                 String username = jwtUtils.extractUsername(jwt);
                 String roles = jwtUtils.extractRole(jwt);

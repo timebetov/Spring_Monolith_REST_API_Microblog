@@ -24,6 +24,7 @@ public class AuthController {
 
         return ResponseEntity
                 .status(HttpStatus.OK)
+                .header("Authorization", "Bearer " + jwtToken)
                 .body(new ResponseDTO(HttpStatus.OK, jwtToken));
     }
 

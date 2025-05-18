@@ -46,7 +46,7 @@ public class JwtTokenGeneratorFilter extends OncePerRequestFilter {
 
                 String token = jwtUtils.generateJwtToken((User) auth.getPrincipal());
 
-                response.setHeader(AppConstants.JWT_HEADER, token);
+                response.setHeader(AppConstants.JWT_HEADER, "Bearer " + token);
             }
             filterChain.doFilter(request, response);
         } catch (Exception e) {
