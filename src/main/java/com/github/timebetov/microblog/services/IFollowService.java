@@ -1,6 +1,6 @@
 package com.github.timebetov.microblog.services;
 
-public interface IFollowerService {
+public interface IFollowService {
 
     boolean isFollowing(Long currentUser, Long authorId);
     /* TODO: Implement in future

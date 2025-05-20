@@ -7,6 +7,7 @@ import com.github.timebetov.microblog.dtos.user.CurrentUserContext;
 import com.github.timebetov.microblog.models.Moment;
 import com.github.timebetov.microblog.models.User;
 import com.github.timebetov.microblog.services.IMomentService;
+import com.github.timebetov.microblog.services.impl.UserService;
 import com.github.timebetov.microblog.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.List;
 public class MomentController {
 
     private final IMomentService momentService;
+    private final UserService userService;
 
     @PostMapping("/")
     public ResponseEntity<ResponseDTO> createMoment(@Valid @RequestBody RequestMomentDTO moment) {

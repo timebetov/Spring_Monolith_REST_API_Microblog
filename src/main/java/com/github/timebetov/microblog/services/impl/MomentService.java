@@ -11,6 +11,7 @@ import com.github.timebetov.microblog.repository.MomentDao;
 import com.github.timebetov.microblog.repository.UserDao;
 import com.github.timebetov.microblog.services.IMomentService;
 import lombok.RequiredArgsConstructor;
+import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
@@ -35,14 +36,12 @@ public class MomentService implements IMomentService {
 
         Moment momentToSave = MomentMapper.mapRequestMomentDTOToMoment(momentDetails, new Moment());
         momentToSave.setAuthor(author);
-
-        Moment savedMoment = momentDao.save(momentToSave);
-        MomentMapper.mapToMomentDTO(savedMoment);
+        momentDao.save(momentToSave);
     }
 
     /**
      *
-     * <p>Requirements:
+     * Requirements:
      * <ul>
      *     <li>Only admins and author himself can get moments with Visibility type `DRAFT`.</li>
      *     <li>Only admins and followers can get moments with Visibility type `FOLLOWERS_ONLY`.</li>
@@ -62,7 +61,7 @@ public class MomentService implements IMomentService {
     public List<MomentDTO> getMoments(Long authorId, String visibility, CurrentUserContext currentUser) {
 
         if (currentUser == null || currentUser.getUserId() == null) {
-            throw new BadCredentialsException("User is not logged in");
+            throw new IllegalArgumentException("User is not logged in");
         }
 
         Moment.Visibility type = (visibility != null)
@@ -74,6 +73,9 @@ public class MomentService implements IMomentService {
                 : (List<Moment>) momentDao.findAll();
 
         if (authorId != null) {
+            if (userDao.findById(authorId).isEmpty()) {
+                throw new ResourceNotFoundException("User", "userId", String.valueOf(authorId));
+            }
             boolean isFollower = followService.isFollowing(currentUser.getUserId(), authorId);
             return moments.stream()
                     .filter(moment -> moment.getVisibility() == type)
@@ -112,8 +114,7 @@ public class MomentService implements IMomentService {
 
         foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility()));
         foundMoment.setText(momentDetails.getText());
-        Moment savedMoment = momentDao.save(foundMoment);
-        MomentMapper.mapToMomentDTO(savedMoment);
+        momentDao.save(foundMoment);
     }
 
     @Override
