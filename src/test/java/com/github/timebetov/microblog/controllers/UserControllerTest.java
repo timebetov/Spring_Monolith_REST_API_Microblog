@@ -26,6 +26,7 @@ import java.util.Optional;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest
@@ -60,8 +61,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.CREATED")
-    void createUser() throws Exception {
+    @DisplayName("should save new user then return HttpStatus.CREATED with specified message")
+    void shouldSaveUser() throws Exception {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("benjamin")
@@ -81,8 +82,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST - Username already exists")
-    void createUserUsernameAlreadyExists() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST - Username already exists")
+    void shouldReturnUsernameAlreadyExistsBadRequestWhenSavingUser() throws Exception {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("user")
@@ -99,8 +100,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST - Email already exists")
-    void createUserEmailAlreadyExists() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST - Email already exists")
+    void shouldReturnEmailAlreadyExistsBadRequestWhenSavingUser() throws Exception {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("user012345")
@@ -116,8 +117,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Not valid Email")
-    void createUserInvalidEmail() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST & Not valid Email")
+    void shouldReturnInvalidEmailBadRequestWhenSavingUser() throws Exception {
 
         CreateUserDTO invalidEmailDTO = CreateUserDTO.builder()
                 .username("validUsername")
@@ -134,8 +135,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Password length less than 8")
-    void createUserPasswordTooShort() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST when saving a new user due to too short password")
+    void shouldReturnPasswordTooShortBadRequestWhenSavingUser() throws Exception {
 
         CreateUserDTO emptyPasswordDTO = CreateUserDTO.builder()
                 .username("validUsername")
@@ -153,8 +154,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("createUser: Should return HttpStatus.BAD_REQUEST & Password length more than 20")
-    void createUserPasswordTooLong() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST when saving a new user due to too long password")
+    void shouldReturnPasswordTooLongBadRequestWhenSavingUser() throws Exception {
 
         CreateUserDTO longPasswordDTO = CreateUserDTO.builder()
                 .username("validUsername")
@@ -172,8 +173,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getAllUsers: Should return 2 users")
-    void getAllUsersTest() throws Exception {
+    @DisplayName("should return 2 users from db")
+    void shouldReturnAllUsers() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch"))
                 .andExpect(status().isOk())
@@ -182,8 +183,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserById: Should return user with given ID")
-    void getUserByIdTest() throws Exception {
+    @DisplayName("should return user with given ID")
+    void shouldReturnUserById() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/2"))
                 .andExpect(status().isOk())
@@ -194,8 +195,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserById: Should return HttpStatus.NOT_FOUND")
-    void getUserByIdNotFoundTest() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND when fetching User with id")
+    void shouldReturnIdNotFoundWhenRetrievingUserWithId() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/1040"))
                 .andExpect(status().isNotFound())
@@ -204,8 +205,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserByUsername: Should return User with given username")
-    void getUserByUsernameTest() throws Exception {
+    @DisplayName("should return User with given username")
+    void shouldReturnUserByUsername() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@user"))
                 .andExpect(status().isOk())
@@ -216,8 +217,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserByUsername: Should return HttpStatus.NOT_FOUND & Username not found")
-    void getUserByUsernameNotFoundTest() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND, Username not found when retrieving user by username")
+    void shouldReturnUsernameNotFoundWhenRetrievingUserByUsername() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/@notexisting"))
                 .andExpect(status().isNotFound())
@@ -226,8 +227,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserByEmail: Should return User with given email")
-    void getUserByEmailTest() throws Exception {
+    @DisplayName("should return User with given email")
+    void shouldReturnUserByEmail() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/user@test.com"))
                 .andExpect(status().isOk())
@@ -238,8 +239,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("getUserByEmail: Should return HttpStatus.NOT_FOUND & Email not found")
-    void getUserByEmailNotFoundTest() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND, Email not found when fetching by email")
+    void shouldReturnEmailNotFoundWhenRetrievingUserByEmail() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/email/notexisting@mail.com"))
                 .andExpect(status().isNotFound())
@@ -248,8 +249,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("updateUser: Should return HttpStatus.OK & Update user in DB")
-    void updateUserTest() throws Exception {
+    @DisplayName("should return HttpStatus.OK & Update and save user in DB")
+    void shouldUpdateAndSaveUserById() throws Exception {
 
         UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
                 .username("updatedUsername")
@@ -270,8 +271,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("updateUser: Should return HttpStatus.NOT_FOUND Invalid user_id")
-    void updateUserInvalidUserIdTest() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND, Invalid user_id when updating user")
+    void shouldReturnIdNotFoundWhenUpdatingUser() throws Exception {
 
         UpdateUserDTO dto = UpdateUserDTO.builder().build();
 
@@ -283,8 +284,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Username already taken")
-    void updateUserUsernameAlreadyTakenTest() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST, Username already taken when updating user")
+    void shouldReturnUsernameAlreadyTakenBadRequestWhenUpdatingUser() throws Exception {
 
         UpdateUserDTO dto = UpdateUserDTO.builder().username("admin").build();
 
@@ -296,8 +297,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("updateUser: Should return HttpStatus.BAD_REQUEST - Email already taken")
-    void updateUserEmailAlreadyTakenTest() throws Exception {
+    @DisplayName("should return HttpStatus.BAD_REQUEST, Email already taken when updaing user")
+    void shouldReturnEmailAlreadyTakenBadRequestWhenUpdatingUser() throws Exception {
 
         UpdateUserDTO dto = UpdateUserDTO.builder().email("admin@test.com").build();
         mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
@@ -308,8 +309,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("deleteUser: Should return HttpStatus.OK & Affect in DB")
-    void deleteUserTest() throws Exception {
+    @DisplayName("should return HttpStatus.OK, Affect in DB when deleting user")
+    void shouldReturnOkWhenDeletingUser() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/2"))
                 .andExpect(status().isOk())
@@ -320,8 +321,8 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("deleteUser: Should return HttpStatus.NOT_FOUND - Id not found")
-    void deleteUserNotFoundTest() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND, Id not found when deleting user by id")
+    void shouldReturnIdNotFoundWhenDeletingUser() throws Exception {
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/1040"))
                 .andExpect(status().isNotFound())

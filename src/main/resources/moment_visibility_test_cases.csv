@@ -1,0 +1,10 @@
+visibility,isAdmin,isFollower,expectedAccess
+PUBLIC,false,false,true
+PUBLIC,false,true,true
+PUBLIC,true,false,true
+FOLLOWERS_ONLY,false,true,true
+FOLLOWERS_ONLY,false,false,false
+FOLLOWERS_ONLY,true,false,true
+DRAFT,false,true,false
+DRAFT,false,false,false
+DRAFT,true,false,true

@@ -40,7 +40,6 @@ public class UserService implements IUserService {
 
         User newUser = UserMapper.mapCreateDTOToUser(userDetails, new User());
         newUser.setPassword(hashedPwd);
-        newUser.setCreatedBy("SYSTEM");
         newUser.setRole(User.Role.USER);
         userDao.save(newUser);
     }

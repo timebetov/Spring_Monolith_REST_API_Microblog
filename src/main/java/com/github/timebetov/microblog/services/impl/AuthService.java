@@ -2,6 +2,7 @@ package com.github.timebetov.microblog.services.impl;
 
 import com.github.timebetov.microblog.dtos.user.LoginUserDTO;
 import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.models.UserDetailsImpl;
 import com.github.timebetov.microblog.services.IAuthService;
 import com.github.timebetov.microblog.utils.JwtUtils;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class AuthService implements IAuthService {
 
         if (null != authResponse && authResponse.isAuthenticated()) {
 
-            User currentUser = (User) authResponse.getPrincipal();
+            UserDetailsImpl currentUser = (UserDetailsImpl) authResponse.getPrincipal();
             return jwtUtils.generateJwtToken(currentUser);
         }
         throw new BadCredentialsException("Bad credentials");

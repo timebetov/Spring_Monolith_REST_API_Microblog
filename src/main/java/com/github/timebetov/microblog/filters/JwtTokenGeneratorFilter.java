@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.timebetov.microblog.configs.AppConstants;
 import com.github.timebetov.microblog.dtos.ErrorResponseDTO;
 import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.models.UserDetailsImpl;
 import com.github.timebetov.microblog.utils.JwtUtils;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -44,7 +45,7 @@ public class JwtTokenGeneratorFilter extends OncePerRequestFilter {
 
             if (null != auth) {
 
-                String token = jwtUtils.generateJwtToken((User) auth.getPrincipal());
+                String token = jwtUtils.generateJwtToken((UserDetailsImpl) auth.getPrincipal());
 
                 response.setHeader(AppConstants.JWT_HEADER, "Bearer " + token);
             }

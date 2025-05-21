@@ -38,25 +38,11 @@ public class MomentServiceTest {
     @MockitoBean
     private UserDao userDao;
 
-    @MockitoBean
-    private FollowService followService;
-
     @Autowired
     private MomentService momentService;
 
     Moment publicMoment1;
-    Moment publicMoment2;
-
-    Moment draft1;
-    Moment draft2;
-
-    Moment forFollowers1;
-    Moment forFollowers2;
-
     User author;
-
-    CurrentUserContext otherUser;
-    CurrentUserContext admin;
 
     @BeforeEach
     void setUp() {
@@ -68,56 +54,11 @@ public class MomentServiceTest {
                 .role(User.Role.USER)
                 .build();
 
-        this.otherUser = CurrentUserContext.builder()
-                .userId(2L)
-                .role(User.Role.USER)
-                .build();
-
-        this.admin = CurrentUserContext.builder()
-                .userId(3L)
-                .role(User.Role.ADMIN)
-                .build();
-
         this.publicMoment1 = Moment.builder()
                 .momentId(UUID.randomUUID())
                 .text("FOR ALL USERS")
                 .author(author)
                 .visibility(Moment.Visibility.PUBLIC)
-                .build();
-
-        this.publicMoment2 = Moment.builder()
-                .momentId(UUID.randomUUID())
-                .text("FOR ALL USERS")
-                .author(author)
-                .visibility(Moment.Visibility.PUBLIC)
-                .build();
-
-        this.draft1 = Moment.builder()
-                .momentId(UUID.randomUUID())
-                .author(author)
-                .visibility(Moment.Visibility.DRAFT)
-                .text("DRAFT 1")
-                .build();
-
-        this.draft2 = Moment.builder()
-                .momentId(UUID.randomUUID())
-                .author(author)
-                .visibility(Moment.Visibility.DRAFT)
-                .text("DRAFT 2")
-                .build();
-
-        this.forFollowers1 = Moment.builder()
-                .momentId(UUID.randomUUID())
-                .author(author)
-                .visibility(Moment.Visibility.FOLLOWERS_ONLY)
-                .text("FOR ONLY FOLLOWERS")
-                .build();
-
-        this.forFollowers2 = Moment.builder()
-                .momentId(UUID.randomUUID())
-                .author(author)
-                .visibility(Moment.Visibility.FOLLOWERS_ONLY)
-                .text("FOR ONLY FOLLOWERS")
                 .build();
     }
 

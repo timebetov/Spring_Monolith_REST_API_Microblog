@@ -1,5 +1,6 @@
 package com.github.timebetov.microblog.services.impl;
 
+import com.github.timebetov.microblog.models.UserDetailsImpl;
 import com.github.timebetov.microblog.repository.UserDao;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +17,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         return userDao.findByUsername(username)
+                .map(UserDetailsImpl::of)
                 .orElseThrow(() -> new UsernameNotFoundException("User: " + username + " not found"));
     }
 }

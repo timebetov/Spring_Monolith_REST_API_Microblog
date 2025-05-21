@@ -2,6 +2,7 @@ package com.github.timebetov.microblog.utils;
 
 import com.github.timebetov.microblog.configs.AppConstants;
 import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.models.UserDetailsImpl;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -52,7 +53,7 @@ public class JwtUtils {
                 .compact();
     }
 
-    public String generateJwtToken(User userDetails) {
+    public String generateJwtToken(UserDetailsImpl userDetails) {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userDetails.getUserId());
