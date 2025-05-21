@@ -3,6 +3,8 @@ package com.github.timebetov.microblog.exceptionHandlers;
 import com.github.timebetov.microblog.dtos.ErrorResponseDTO;
 import com.github.timebetov.microblog.exceptions.AlreadyExistsException;
 import com.github.timebetov.microblog.exceptions.ResourceNotFoundException;
+import jakarta.validation.ConstraintValidator;
+import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
@@ -39,6 +42,39 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .errorCode(HttpStatus.BAD_REQUEST)
                 .errorDetails(errors)
                 .errorTime(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponseDTO> handleConstraintViolationException(ConstraintViolationException ex, WebRequest request) {
+
+        Map<String, String> errors = new HashMap<>();
+        ex.getConstraintViolations().forEach(cv -> {
+            String path = cv.getPropertyPath().toString();
+            String message = cv.getMessage();
+            errors.put(path, message);
+        });
+
+        ErrorResponseDTO result = ErrorResponseDTO.builder()
+                .apiPath(request.getDescription(false).replace("uri=", ""))
+                .errorCode(HttpStatus.BAD_REQUEST)
+                .errorDetails(errors)
+                .errorTime(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDTO> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex, WebRequest request) {
+
+        ErrorResponseDTO result = ErrorResponseDTO.builder()
+                .apiPath(request.getDescription(false).replace("uri=", ""))
+                .errorCode(HttpStatus.BAD_REQUEST)
+                .errorTime(LocalDateTime.now())
+                .errorMessage(ex.getName())
                 .build();
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);

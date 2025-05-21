@@ -25,6 +25,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -63,6 +64,8 @@ public class MomentControllerTest {
                 "VALUES (2, 'admin@test.com', 'admin', 'adminPWD', 'ADMIN', CURRENT_TIMESTAMP, 'SYSTEM')");
         jdbcTemplate.execute("INSERT INTO moments (moment_id, text, visibility, author_id, created_at, created_by) " +
                 "VALUES ('1ee1704a-f1af-474a-b18c-04bfd0210865', 'Lorem ipsum plain text', 'PUBLIC', 2, CURRENT_TIMESTAMP, 'SYSTEM')");
+        jdbcTemplate.execute("INSERT INTO moments (moment_id, text, visibility, author_id, created_at, created_by) " +
+                "VALUES ('ee3e6649-5f75-45fb-a492-a5e037b8f545', 'Lorem ipsum plain text', 'DRAFT', 2, CURRENT_TIMESTAMP, 'SYSTEM')");
     }
 
     @BeforeEach
@@ -219,6 +222,63 @@ public class MomentControllerTest {
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
         Assertions.assertEquals(1, moments.size());
+    }
+
+    @Test
+    @DisplayName("should return all PUBLIC moments when requesting without defining author id and visibility")
+    void shouldReturnPublicMomentsWhenRequestingNullAuthorIdAndVisibility() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("should return moments when retrieving with given author id and visibility")
+    void shouldReturnMomentsWhenRetrievingWithGivenAuthorIdAndVisibility() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
+                        .queryParam("authorId", String.valueOf(2))
+                        .queryParam("visibility", "PUBLIC"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.NOT_FOUND when retrieving with not existing author id")
+    void shouldReturnAuthorNotFoundWhenRetrievingMoments() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
+                        .queryParam("authorId", String.valueOf(99)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.BAD_REQUEST when retrieving with not valid visibility type")
+    void shouldReturnInvalidVisibilityBadRequestWhenRetrievingMoments() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
+                        .queryParam("visibility", "NONE"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("should return empty list when retrieving drafts of another user")
+    void shouldReturnEmptyListWhenRetrievingDraftsOfAnotherUser() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
+                        .queryParam("visibility", "DRAFT"))
+                .andExpect(jsonPath("$", hasSize(0)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.BAD_REQUEST when retrieving with invalid author id")
+    void shouldReturnInvalidAuthorIdBadRequestWhenRetrievingMoments() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
+                        .queryParam("authorId", "abc"))
+                .andExpect(status().isBadRequest());
     }
 
     @Test

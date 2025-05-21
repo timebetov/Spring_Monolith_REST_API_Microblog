@@ -4,13 +4,16 @@ import com.github.timebetov.microblog.dtos.ResponseDTO;
 import com.github.timebetov.microblog.dtos.moment.MomentDTO;
 import com.github.timebetov.microblog.dtos.moment.RequestMomentDTO;
 import com.github.timebetov.microblog.dtos.user.CurrentUserContext;
+import com.github.timebetov.microblog.models.Moment;
 import com.github.timebetov.microblog.services.IMomentService;
 import com.github.timebetov.microblog.utils.SecurityUtils;
+import com.github.timebetov.microblog.validations.EnumValues;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping(value = "/moments", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
+@Validated
 public class MomentController {
 
     private final IMomentService momentService;
@@ -36,7 +40,7 @@ public class MomentController {
     @GetMapping("/")
     public ResponseEntity<List<MomentDTO>> getAllMoments(
             @RequestParam(required = false) Long authorId,
-            @RequestParam(required = false) String visibility) {
+            @RequestParam(required = false) @EnumValues(enumClass = Moment.Visibility.class) String visibility) {
 
         CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
         List<MomentDTO> result = momentService.getMoments(authorId, visibility, currentUser);
