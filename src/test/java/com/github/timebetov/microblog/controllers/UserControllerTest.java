@@ -68,6 +68,7 @@ public class UserControllerTest {
                 .username("benjamin")
                 .email("benjamin@test.com")
                 .password("passwordTesting2025")
+                .confirmPassword("passwordTesting2025")
                 .build();
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")

@@ -13,7 +13,7 @@ public interface IMomentService {
 
     void createMoment(Long authorId, RequestMomentDTO momentDetails);
     List<MomentDTO> getMoments(Long authorId, @EnumValues(enumClass = Moment.Visibility.class) String visibility, CurrentUserContext currentUser);
-    MomentDTO getMomentById(UUID momentUUId);
-    void updateMoment(UUID momentId, RequestMomentDTO momentDetails);
-    void deleteMoment(UUID momentId);
+    MomentDTO getMomentById(UUID momentUUId, CurrentUserContext currentUser);
+    void updateMoment(UUID momentId, RequestMomentDTO momentDetails, CurrentUserContext currentUser);
+    void deleteMoment(UUID momentId, CurrentUserContext currentUser);
 }

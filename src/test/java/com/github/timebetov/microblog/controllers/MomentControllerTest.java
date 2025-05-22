@@ -53,6 +53,9 @@ public class MomentControllerTest {
     @Autowired
     private UserDao userDao;
 
+    UserDetailsImpl user;
+    UserDetailsImpl admin;
+
     @BeforeEach
     void init() {
 
@@ -60,6 +63,8 @@ public class MomentControllerTest {
                 .defaultRequest(MockMvcRequestBuilders.get("/").contextPath("/api"))
                 .build();
 
+        jdbcTemplate.execute("INSERT INTO users (user_id, email, username, password, role, created_at, created_by) " +
+                "VALUES (1, 'user1@test.com', 'user1', 'user1PWD', 'USER', CURRENT_TIMESTAMP, 'SYSTEM')");
         jdbcTemplate.execute("INSERT INTO users (user_id, email, username, password, role, created_at, created_by) " +
                 "VALUES (2, 'admin@test.com', 'admin', 'adminPWD', 'ADMIN', CURRENT_TIMESTAMP, 'SYSTEM')");
         jdbcTemplate.execute("INSERT INTO moments (moment_id, text, visibility, author_id, created_at, created_by) " +
@@ -70,25 +75,10 @@ public class MomentControllerTest {
 
     @BeforeEach
     void setAuth() {
-        User savedUser = userDao.save(
-                User.builder()
-                        .username("timebetov")
-                        .email("timebetov@test.com")
-                        .password("timebetov")
-                        .role(User.Role.USER)
-                        .build()
-        );
-        UserDetailsImpl testUser = new UserDetailsImpl(
-                savedUser.getUserId(),
-                savedUser.getUsername(),
-                savedUser.getEmail(),
-                savedUser.getPassword(),
-                savedUser.getRole().name(),
-                savedUser.getBio(),
-                savedUser.getPicture()
-        );
+        user = new UserDetailsImpl(1L, "user1", "user1@test.com", "user1PWD", "USER");
+        admin = new UserDetailsImpl(100L, "admin", "admin@test.com", "adminPWD", "ADMIN");
 
-        Authentication authentication = new TestingAuthenticationToken(testUser, null, "ROLE_USER");
+        Authentication authentication = new TestingAuthenticationToken(user, null, "ROLE_USER");
         authentication.setAuthenticated(true);
 
         SecurityContext secContext = SecurityContextHolder.createEmptyContext();
@@ -124,7 +114,7 @@ public class MomentControllerTest {
                 .andExpect(status().isCreated());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(2, moments.size());
+        Assertions.assertEquals(3, moments.size());
     }
 
     /**
@@ -158,7 +148,7 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(1, moments.size());
+        Assertions.assertEquals(2, moments.size());
     }
 
     /**
@@ -190,7 +180,7 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(1, moments.size());
+        Assertions.assertEquals(2, moments.size());
     }
 
     /**
@@ -221,7 +211,7 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(1, moments.size());
+        Assertions.assertEquals(2, moments.size());
     }
 
     @Test
@@ -298,7 +288,7 @@ public class MomentControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/adsda"))
                 .andExpect(jsonPath("$.errorMessage", is("Invalid UUID string: adsda")))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -310,8 +300,18 @@ public class MomentControllerTest {
     }
 
     @Test
-    @DisplayName("should return HttpStatus.NO_CONTENT, update and save moment in db")
+    @DisplayName("should return HttpStatus.OK, update and save moment in db")
     void shouldUpdateAndSaveMoment() throws Exception {
+
+        // Authenticate as ADMIN
+        SecurityContextHolder.clearContext();
+
+        Authentication authentication = new TestingAuthenticationToken(admin, null, admin.getAuthorities());
+        authentication.setAuthenticated(true);
+
+        SecurityContext secContext = SecurityContextHolder.createEmptyContext();
+        secContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(secContext);
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("UPDATED TEXT")
@@ -321,7 +321,7 @@ public class MomentControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.put("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
                 .andExpect(jsonPath("$.text", is("UPDATED TEXT")))
@@ -329,8 +329,23 @@ public class MomentControllerTest {
     }
 
     @Test
-    @DisplayName("should return HttpStatus.INTERNAL_SERVER_ERROR, when updating requesting invalid visibility type")
-    void shouldReturnInvalidVisibilityInternalServerErrorWhenUpdatingMoment() throws Exception {
+    @DisplayName("should not update cause neither author nor admin")
+    void shouldNotUpdateMomentCauseNeitherAuthorOrAdmin() throws Exception {
+
+        RequestMomentDTO req = RequestMomentDTO.builder()
+                .text("UPDATED TEXT")
+                .visibility("DRAFT")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.BAD_REQUEST, when updating requesting invalid visibility type")
+    void shouldReturnInvalidVisibilityBadRequestWhenUpdatingMoment() throws Exception {
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("UPDATED TEXT")
@@ -340,7 +355,7 @@ public class MomentControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.put("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req)))
-                .andExpect(status().isInternalServerError());
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -349,7 +364,7 @@ public class MomentControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.put("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210825")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(RequestMomentDTO.builder().build())))
+                        .content(objectMapper.writeValueAsString(RequestMomentDTO.builder().text("JUST TEXT").build())))
                 .andExpect(status().isNotFound());
     }
 
@@ -373,8 +388,26 @@ public class MomentControllerTest {
     @DisplayName("should delete moment by id")
     void shouldDeleteMomentById() throws Exception {
 
+        // Authenticate as ADMIN
+        SecurityContextHolder.clearContext();
+
+        Authentication authentication = new TestingAuthenticationToken(admin, null, admin.getAuthorities());
+        authentication.setAuthenticated(true);
+
+        SecurityContext secContext = SecurityContextHolder.createEmptyContext();
+        secContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(secContext);
+
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("should not delete cause neither author nor admin")
+    void shouldNotDeleteMomentCauseNeitherAuthorOrAdmin() throws Exception {
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
+                .andExpect(status().isForbidden());
     }
 
     @Test

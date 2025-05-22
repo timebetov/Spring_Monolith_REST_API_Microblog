@@ -20,7 +20,7 @@ public class EnumValuesValidator implements ConstraintValidator<EnumValues, Char
         Enum<?>[] enumConstants = enumClass.getEnumConstants();
 
         acceptedValues = Arrays.stream(enumConstants)
-                .map(Enum::name)
+                .map(e -> e.name().toUpperCase())
                 .collect(Collectors.toSet());
 
         acceptedValuesString = String.join(", ", acceptedValues);
@@ -30,7 +30,7 @@ public class EnumValuesValidator implements ConstraintValidator<EnumValues, Char
     public boolean isValid(CharSequence value, ConstraintValidatorContext context) {
         if (value == null) return true;
 
-        boolean isValid = acceptedValues.contains(value);
+        boolean isValid = acceptedValues.contains(value.toString().toUpperCase());
 
         if (!isValid) {
             context.disableDefaultConstraintViolation();

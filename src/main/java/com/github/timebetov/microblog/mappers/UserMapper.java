@@ -16,10 +16,6 @@ public class UserMapper {
         userDTO.setBio(user.getBio());
         userDTO.setPicture(user.getPicture());
         userDTO.setRole(user.getRole().name());
-        userDTO.setCreatedBy(user.getCreatedBy());
-        userDTO.setCreatedAt(user.getCreatedAt());
-        userDTO.setUpdatedBy(user.getUpdatedBy());
-        userDTO.setUpdatedAt(user.getUpdatedAt());
         if (user.getFollowers() != null) {
             userDTO.setFollowers(user.getFollowers().size());
         }

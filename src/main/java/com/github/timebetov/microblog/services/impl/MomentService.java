@@ -13,6 +13,7 @@ import com.github.timebetov.microblog.services.IMomentService;
 import com.github.timebetov.microblog.validations.EnumValues;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.websocket.AuthenticationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,11 @@ public class MomentService implements IMomentService {
                 () -> new ResourceNotFoundException("User", "userId", String.valueOf(authorId)));
 
         Moment momentToSave = MomentMapper.mapRequestMomentDTOToMoment(momentDetails, new Moment());
+
+        // Visibility type by default will be `PUBLIC` if not defined
+        if (momentToSave.getVisibility() == null) {
+            momentToSave.setVisibility(Moment.Visibility.PUBLIC);
+        }
         momentToSave.setAuthor(author);
         momentDao.save(momentToSave);
     }
@@ -96,34 +102,62 @@ public class MomentService implements IMomentService {
         }
     }
 
-
     @Override
-    public MomentDTO getMomentById(UUID momentUUId) {
+    public MomentDTO getMomentById(UUID momentUUId, CurrentUserContext currentUser) {
+
+        if (currentUser == null || currentUser.getUserId() == null) {
+            throw new IllegalArgumentException("User is not logged in");
+        }
 
         Moment foundMoment = momentDao.findById(momentUUId).orElseThrow(
                 () -> new ResourceNotFoundException("Moment", "momentUUID", momentUUId.toString()));
+
+        Long momentAuthorId = foundMoment.getAuthor().getUserId();
+        boolean isFollower = followService.isFollowing(currentUser.getUserId(), momentAuthorId);
+
+        if (!foundMoment.getVisibility().canBeViewedBy(currentUser, momentAuthorId, isFollower)) {
+            throw new AccessDeniedException("You don't have permission to view this moment");
+        }
 
         return MomentMapper.mapToMomentDTO(foundMoment);
     }
 
     @Override
-    public void updateMoment(UUID momentId, RequestMomentDTO momentDetails) {
+    public void updateMoment(UUID momentId, RequestMomentDTO momentDetails, CurrentUserContext currentUser) {
+
+        if (currentUser == null || currentUser.getUserId() == null) {
+            throw new IllegalArgumentException("User is not logged in");
+        }
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(
                 () -> new ResourceNotFoundException("Moment", "id", momentId.toString())
         );
 
-        foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility()));
+        if (!foundMoment.getAuthor().getUserId().equals(currentUser.getUserId()) && !currentUser.isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to update this moment");
+        }
+
+        if (momentDetails.getVisibility() != null) {
+            foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility().toUpperCase()));
+        }
         foundMoment.setText(momentDetails.getText());
         momentDao.save(foundMoment);
     }
 
     @Override
-    public void deleteMoment(UUID momentId) {
+    public void deleteMoment(UUID momentId, CurrentUserContext currentUser) {
+
+        if (currentUser == null || currentUser.getUserId() == null) {
+            throw new IllegalArgumentException("User is not logged in");
+        }
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "id", momentId.toString())
-        );
+                () -> new ResourceNotFoundException("Moment", "id", momentId.toString()));
+
+        if (!foundMoment.getAuthor().getUserId().equals(currentUser.getUserId()) && !currentUser.isAdmin()) {
+            throw new AccessDeniedException("You don't have permission to delete this moment");
+        }
+
         momentDao.delete(foundMoment);
     }
 }

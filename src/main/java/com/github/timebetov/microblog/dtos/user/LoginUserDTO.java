@@ -1,6 +1,5 @@
 package com.github.timebetov.microblog.dtos.user;
 
-import com.github.timebetov.microblog.validations.FieldsValueMatch;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -12,11 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@FieldsValueMatch(
-        field = "password",
-        fieldMatch = "confirmPassword",
-        message = "Passwords do not match!"
-)
 public class LoginUserDTO {
 
     @NotEmpty(message = "Username cannot be empty")
@@ -25,7 +19,4 @@ public class LoginUserDTO {
 
     @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters long")
     private String password;
-
-    @Size(min = 8, max = 20, message = "Confirm Password must be between 8 and 20 characters long")
-    private String confirmPassword;
 }

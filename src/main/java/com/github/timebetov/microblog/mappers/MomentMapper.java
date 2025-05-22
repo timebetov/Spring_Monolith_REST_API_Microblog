@@ -19,7 +19,9 @@ public class MomentMapper {
     public static Moment mapRequestMomentDTOToMoment(RequestMomentDTO requestMomentDTO, Moment moment) {
 
         moment.setText(requestMomentDTO.getText().trim());
-        moment.setVisibility(Moment.Visibility.valueOf(requestMomentDTO.getVisibility()));
+        if (requestMomentDTO.getVisibility() != null) {
+            moment.setVisibility(Moment.Visibility.valueOf(requestMomentDTO.getVisibility().toUpperCase()));
+        }
         return moment;
     }
 }

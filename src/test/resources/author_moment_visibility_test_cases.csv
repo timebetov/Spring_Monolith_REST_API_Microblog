@@ -1,4 +1,4 @@
-visibility,isAdmin,isAuthor,isFollower,expectedVisible
+visibility,isAdmin,isAuthor,isFollower,shouldAccess
 DRAFT,false,false,false,false
 DRAFT,true,false,false,true
 DRAFT,false,true,false,true

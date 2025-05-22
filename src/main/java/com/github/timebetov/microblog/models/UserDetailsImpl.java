@@ -20,8 +20,6 @@ public class UserDetailsImpl implements UserDetails {
     private final String email;
     private final String password;
     private final String role;
-    private final String bio;
-    private final String picture;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -34,9 +32,7 @@ public class UserDetailsImpl implements UserDetails {
                 user.getUsername(),
                 user.getEmail(),
                 user.getPassword(),
-                user.getRole().name(),
-                user.getBio(),
-                user.getPicture()
+                user.getRole().name()
         );
     }
 }

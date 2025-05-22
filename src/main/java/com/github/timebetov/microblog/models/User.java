@@ -23,7 +23,7 @@ public class User extends BaseEntity {
     public enum Role { USER, ADMIN;}
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
 
     @Column(unique = true, nullable = false)

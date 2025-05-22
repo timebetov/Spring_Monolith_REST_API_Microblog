@@ -9,6 +9,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -42,6 +44,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .errorCode(HttpStatus.BAD_REQUEST)
                 .errorDetails(errors)
                 .errorTime(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
+
+        ErrorResponseDTO result = ErrorResponseDTO.builder()
+                .apiPath(request.getDescription(false).replace("uri=", ""))
+                .errorCode(HttpStatus.FORBIDDEN)
+                .errorTime(LocalDateTime.now())
+                .errorMessage(ex.getMessage())
+                .build();
+
+        return new ResponseEntity<>(result, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
+
+        ErrorResponseDTO result = ErrorResponseDTO.builder()
+                .apiPath(request.getDescription(false).replace("uri=", ""))
+                .errorCode(HttpStatus.BAD_REQUEST)
+                .errorTime(LocalDateTime.now())
+                .errorMessage(ex.getMessage())
                 .build();
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);

@@ -19,10 +19,6 @@ public class UserDTO {
     private String bio;
     private String picture;
     private String role;
-    private LocalDateTime createdAt;
-    private String createdBy;
-    private LocalDateTime updatedAt;
-    private String updatedBy;
     private int followers;
     private int following;
     private int moments;

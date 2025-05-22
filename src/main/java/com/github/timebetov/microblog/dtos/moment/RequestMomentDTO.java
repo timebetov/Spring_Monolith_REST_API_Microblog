@@ -20,7 +20,6 @@ public class RequestMomentDTO {
     @Size(max = 500, message = "Text must contain only 500 characters")
     private String text;
 
-    @NotNull(message = "Visibility type must be not null")
     @EnumValues(enumClass = Moment.Visibility.class)
     private String visibility;
 }
