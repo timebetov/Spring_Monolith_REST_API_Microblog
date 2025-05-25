@@ -7,7 +7,6 @@ import com.github.timebetov.microblog.filters.JwtTokenValidatorFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,8 +37,6 @@ public class MicroblogSecurityConfig {
         http    // Routing
                 .authorizeHttpRequests((req) -> req
                         .requestMatchers("/auth/login", "/users/create", "/error", "/auth/authenticate").permitAll()
-                        .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/users/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 );
 

@@ -30,7 +30,7 @@ public class EnumValuesValidator implements ConstraintValidator<EnumValues, Char
     public boolean isValid(CharSequence value, ConstraintValidatorContext context) {
         if (value == null) return true;
 
-        boolean isValid = acceptedValues.contains(value.toString().toUpperCase());
+        boolean isValid = acceptedValues.contains(value.toString().trim().toUpperCase());
 
         if (!isValid) {
             context.disableDefaultConstraintViolation();

@@ -13,17 +13,16 @@ import com.github.timebetov.microblog.services.impl.MomentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvFileSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,20 +33,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@ActiveProfiles("test")
-public class MomentServiceTest {
+@ExtendWith(MockitoExtension.class)
+class MomentServiceTest {
 
-    @MockitoBean
+    @Mock
     private MomentDao momentDao;
 
-    @MockitoBean
+    @Mock
     private UserDao userDao;
 
-    @MockitoBean
+    @Mock
     private FollowService followService;
 
-    @Autowired
+    @InjectMocks
     private MomentService momentService;
 
     @Mock
@@ -77,7 +75,7 @@ public class MomentServiceTest {
      */
     @Test
     @DisplayName("should save a moment")
-    public void shouldSaveMoment() {
+    void shouldSaveMoment() {
 
         RequestMomentDTO reqMomentDTO = RequestMomentDTO.builder()
                 .text("FOR ALL USERS")
@@ -109,7 +107,7 @@ public class MomentServiceTest {
 
     @Test
     @DisplayName("should save new moment when visibility type not defined")
-    public void shouldSaveNewMomentWhenVisibilityTypeNotDefined() {
+    void shouldSaveNewMomentWhenVisibilityTypeNotDefined() {
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("FOR ALL USERS")
@@ -142,7 +140,7 @@ public class MomentServiceTest {
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when saving moment with non-existing authorId")
-    public void shouldThrowExceptionWhenSavingMomentWithNonExistingAuthorId() {
+    void shouldThrowExceptionWhenSavingMomentWithNonExistingAuthorId() {
 
         when(userDao.findById(100L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.createMoment(100L, new RequestMomentDTO()));
@@ -168,13 +166,15 @@ public class MomentServiceTest {
         moment.setAuthor(author);
 
         when(currentUser.getUserId()).thenReturn(currentUserId);
-        when(currentUser.isAdmin()).thenReturn(isAdmin);
+        if (!visibility.equals(Moment.Visibility.PUBLIC.toString())) {
+            when(currentUser.isAdmin()).thenReturn(isAdmin);
+        }
         when(momentDao.findById(momentID)).thenReturn(Optional.of(moment));
-        when(userDao.findById(authorId)).thenReturn(Optional.of(author));
         when(followService.isFollowing(currentUserId, authorId)).thenReturn(isFollower);
 
         if (shouldAccess) {
             MomentDTO foundMoment = momentService.getMomentById(momentID, currentUser);
+
             assertNotNull(foundMoment, "Moment should not be null");
             verify(momentDao).findById(momentID);
         } else {
@@ -189,7 +189,7 @@ public class MomentServiceTest {
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when retrieving non-existing moment")
-    public void shouldThrowResourceNotFoundExceptionWhenRetrievingMomentWithNonExistingId() {
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingMomentWithNonExistingId() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.getMomentById(UUID.randomUUID(), currentUser));
@@ -211,7 +211,9 @@ public class MomentServiceTest {
         Long authorId = isAuthor ? currentUserId : 2L;
 
         when(currentUser.getUserId()).thenReturn(currentUserId);
-        when(currentUser.isAdmin()).thenReturn(isAdmin);
+        if (!visibility.equals(Moment.Visibility.PUBLIC.toString())) {
+            when(currentUser.isAdmin()).thenReturn(isAdmin);
+        }
 
         moment.setVisibility(Moment.Visibility.valueOf(visibility));
         author.setUserId(authorId);
@@ -244,7 +246,9 @@ public class MomentServiceTest {
         Long momentAuthorId = 2L;
 
         when(currentUser.getUserId()).thenReturn(currentUserId);
-        when(currentUser.isAdmin()).thenReturn(isAdmin);
+        if (!visibility.equals(Moment.Visibility.PUBLIC.toString())) {
+            when(currentUser.isAdmin()).thenReturn(isAdmin);
+        }
 
         moment.setVisibility(Moment.Visibility.valueOf(visibility));
         author.setUserId(momentAuthorId);
@@ -313,7 +317,9 @@ public class MomentServiceTest {
                 .build();
 
         when(currentUser.getUserId()).thenReturn(currentUserId);
-        when(currentUser.isAdmin()).thenReturn(isAdmin);
+        if (!isAuthor) {
+            when(currentUser.isAdmin()).thenReturn(isAdmin);
+        }
 
         when(momentDao.findById(momentID)).thenReturn(Optional.of(moment));
 
@@ -334,7 +340,7 @@ public class MomentServiceTest {
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when attempting update non-existing moment")
-    public void shouldThrowResourceNotFoundExceptionWhenUpdatingMomentWithNonExistingId() {
+    void shouldThrowResourceNotFoundExceptionWhenUpdatingMomentWithNonExistingId() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.updateMoment(UUID.randomUUID(), null, currentUser));
@@ -360,7 +366,9 @@ public class MomentServiceTest {
         moment.setAuthor(author);
 
         when(currentUser.getUserId()).thenReturn(currentUserId);
-        when(currentUser.isAdmin()).thenReturn(isAdmin);
+        if (!isAuthor) {
+            when(currentUser.isAdmin()).thenReturn(isAdmin);
+        }
 
         when(momentDao.findById(momentID))
                 .thenReturn(Optional.of(moment))
@@ -383,7 +391,7 @@ public class MomentServiceTest {
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when attempting non-existing moment")
-    public void shouldThrowResourceNotFoundExceptionWhenDeletingMomentWithNonExistingId() {
+    void shouldThrowResourceNotFoundExceptionWhenDeletingMomentWithNonExistingId() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.deleteMoment(UUID.randomUUID(), currentUser));

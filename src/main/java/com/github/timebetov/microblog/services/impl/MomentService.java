@@ -9,16 +9,12 @@ import com.github.timebetov.microblog.models.Moment;
 import com.github.timebetov.microblog.models.User;
 import com.github.timebetov.microblog.repository.MomentDao;
 import com.github.timebetov.microblog.repository.UserDao;
+import com.github.timebetov.microblog.services.IFollowService;
 import com.github.timebetov.microblog.services.IMomentService;
-import com.github.timebetov.microblog.validations.EnumValues;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.websocket.AuthenticationException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,7 +24,7 @@ public class MomentService implements IMomentService {
 
     private final MomentDao momentDao;
     private final UserDao userDao;
-    private final FollowService followService;
+    private final IFollowService followService;
 
     @Override
     public void createMoment(Long authorId, RequestMomentDTO momentDetails) {
@@ -72,7 +68,7 @@ public class MomentService implements IMomentService {
         }
 
         Moment.Visibility type = (visibility != null)
-                ? Moment.Visibility.valueOf(visibility.toUpperCase())
+                ? Moment.Visibility.valueOf(visibility.trim().toUpperCase())
                 : Moment.Visibility.PUBLIC;
 
         List<Moment> moments = (authorId != null)
@@ -159,5 +155,13 @@ public class MomentService implements IMomentService {
         }
 
         momentDao.delete(foundMoment);
+    }
+
+    @Override
+    public Long getAuthorId(UUID momentUUId) {
+
+        return momentDao.findAuthorIdByMomentId(momentUUId).orElseThrow(
+                () -> new ResourceNotFoundException("Moment", "id", momentUUId.toString())
+        );
     }
 }

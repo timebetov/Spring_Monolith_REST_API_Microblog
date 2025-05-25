@@ -3,11 +3,7 @@ package com.github.timebetov.microblog.models;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
@@ -44,6 +40,7 @@ public class User extends BaseEntity {
     private Role role;
 
     @ManyToMany(mappedBy = "follows")
+    @JsonIgnore
     private Set<User> followers;
 
     @ManyToMany
@@ -52,11 +49,14 @@ public class User extends BaseEntity {
     }, inverseJoinColumns = {
             @JoinColumn(name = "followed_id", referencedColumnName = "userId", nullable = false)
     })
+    @JsonIgnore
     private Set<User> follows;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "author", targetEntity = Moment.class, fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private Set<Moment> moments;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "author", targetEntity = Comment.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private List<Comment> comments;
 }

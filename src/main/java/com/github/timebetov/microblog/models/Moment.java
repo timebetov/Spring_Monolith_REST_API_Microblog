@@ -1,7 +1,6 @@
 package com.github.timebetov.microblog.models;
 
 import com.github.timebetov.microblog.dtos.user.CurrentUserContext;
-import com.github.timebetov.microblog.services.impl.FollowService;
 import jakarta.persistence.*;
 import lombok.*;
 

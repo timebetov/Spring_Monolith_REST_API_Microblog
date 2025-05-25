@@ -20,7 +20,7 @@ public class MomentMapper {
 
         moment.setText(requestMomentDTO.getText().trim());
         if (requestMomentDTO.getVisibility() != null) {
-            moment.setVisibility(Moment.Visibility.valueOf(requestMomentDTO.getVisibility().toUpperCase()));
+            moment.setVisibility(Moment.Visibility.valueOf(requestMomentDTO.getVisibility().trim().toUpperCase()));
         }
         return moment;
     }

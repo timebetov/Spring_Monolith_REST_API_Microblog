@@ -9,13 +9,11 @@ import com.github.timebetov.microblog.mappers.UserMapper;
 import com.github.timebetov.microblog.models.User;
 import com.github.timebetov.microblog.repository.UserDao;
 import com.github.timebetov.microblog.services.IUserService;
+import com.github.timebetov.microblog.validations.OnlyOwnerOrAdmin;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,6 +77,7 @@ public class UserService implements IUserService {
         return UserMapper.mapToUserDTO(user);
     }
 
+    @OnlyOwnerOrAdmin(ownerIdParam = "userId")
     @Override
     public void updateUser(Long userId, UpdateUserDTO userDetails) {
 
@@ -100,6 +99,7 @@ public class UserService implements IUserService {
         userDao.save(updatedUser);
     }
 
+    @OnlyOwnerOrAdmin(ownerIdParam = "userId")
     @Override
     public boolean deleteUser(Long userId) {
 

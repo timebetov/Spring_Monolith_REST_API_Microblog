@@ -19,7 +19,30 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/fetch",
+							"path": [
+								"fetch"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/profile",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
@@ -42,22 +65,22 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "/fetch/202",
+							"raw": "/fetch/2",
 							"path": [
 								"fetch",
-								"202"
+								"2"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "/fetch/{username}",
+					"name": "/fetch/@{username}",
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -66,15 +89,15 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "/fetch/@testname",
+							"raw": "/fetch/@",
 							"path": [
 								"fetch",
-								"@testname"
+								"@"
 							]
 						}
 					},
@@ -90,16 +113,16 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "/fetch/email/timebetov@gmail.com",
+							"raw": "/fetch/email/admin@test.com",
 							"path": [
 								"fetch",
 								"email",
-								"timebetov@gmail.com"
+								"admin@test.com"
 							]
 						}
 					},
@@ -115,7 +138,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"testuser1\",\n    \"email\": \"testuser1@gmail.com\",\n    \"password\": \"testPass1\"\n}",
+							"raw": "{\n    \"username\": \"user\",\n    \"email\": \"user@gmail.com\",\n    \"password\": \"userPWD\",\n    \"confirmPassword\": \"userPWD\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -138,10 +161,16 @@
 							"type": "noauth"
 						},
 						"method": "PUT",
-						"header": [],
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"role\": \"ADMIN\",\n    \"bio\": \"QA Engineer\"\n}",
+							"raw": "{\n    \"username\": \"updatedusername\",\n    \"bio\": \"QA Engineer\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -149,9 +178,9 @@
 							}
 						},
 						"url": {
-							"raw": "/52",
+							"raw": "/6",
 							"path": [
-								"52"
+								"6"
 							]
 						}
 					},
@@ -167,14 +196,14 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "/52",
+							"raw": "/6",
 							"path": [
-								"52"
+								"6"
 							]
 						}
 					},
@@ -217,19 +246,23 @@
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "/?visibility=draft",
+							"raw": "/?authorId=2&visibility=followers_onlY",
 							"path": [
 								""
 							],
 							"query": [
 								{
+									"key": "authorId",
+									"value": "2"
+								},
+								{
 									"key": "visibility",
-									"value": "draft"
+									"value": "followers_onlY"
 								}
 							]
 						}
@@ -237,19 +270,71 @@
 					"response": []
 				},
 				{
-					"name": "/moments",
+					"name": "/my",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/my?visibility=followers_only",
+							"path": [
+								"my"
+							],
+							"query": [
+								{
+									"key": "visibility",
+									"value": "followers_only"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/moments/id",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/c1449429-010f-4e43-ab7a-b2963efd9678",
+							"path": [
+								"c1449429-010f-4e43-ab7a-b2963efd9678"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/create",
 					"request": {
 						"method": "POST",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{jwtToken}}",
+								"value": "Bearer {{TokenUser1}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"text\": \"SOME TEXT\",\n    \"visibility\": \"PUBLIC\"\n}",
+							"raw": "{\n    \"text\": \"Some text to share\",\n    \"visibility\": \"PUBLIC\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -260,6 +345,55 @@
 							"raw": "/",
 							"path": [
 								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/update",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\": \"text to update\",\n    \"visibility\": \"draft\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "/77fe368c-9f29-423e-93fd-26fef3fa348x",
+							"path": [
+								"77fe368c-9f29-423e-93fd-26fef3fa348x"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/delete",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/77fe368c-9f29-423e-93fd-26fef3fa3486",
+							"path": [
+								"77fe368c-9f29-423e-93fd-26fef3fa3486"
 							]
 						}
 					},
@@ -290,6 +424,117 @@
 			]
 		},
 		{
+			"name": "follow service",
+			"item": [
+				{
+					"name": "Followers",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/followers/1",
+							"path": [
+								"followers",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Followings",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/followings/1",
+							"path": [
+								"followings",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Follow",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/follow/2",
+							"path": [
+								"follow",
+								"2"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unfollow",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/unfollow/2",
+							"path": [
+								"unfollow",
+								"2"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.request.url.path = [\"api\", \"users\"].concat(pm.request.url.path);"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
 			"name": "/auth/login",
 			"request": {
 				"auth": {
@@ -299,7 +544,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"username\": \"testname\",\n    \"password\": \"testPass\",\n    \"confirmPassword\": \"testPass\"\n}",
+					"raw": "{\n    \"username\": \"username\",\n    \"password\": \"userPassword\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -325,12 +570,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "adminpass",
+							"value": "password",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "admin",
+							"value": "username",
 							"type": "string"
 						}
 					]
@@ -375,8 +620,18 @@
 	],
 	"variable": [
 		{
-			"key": "jwtToken",
-			"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJBRE1JTiIsInVzZXJJZCI6MzAyLCJlbWFpbCI6ImFkbWluQGdtYWlsLmNvbSIsImlhdCI6MTc0NzU3MDkyMSwiaXNzIjoiYXBwLmp3dC5pc3N1ZXIiLCJleHAiOjE3NDc2NTczMjF9.RjBMt1Imjd7OfbbXvl_tbcoAnztlGJ4DXni0tGgIfvg",
+			"key": "TokenUser1",
+			"value": "PASTE VALUE",
+			"type": "string"
+		},
+		{
+			"key": "TokenUser2",
+			"value": "PASTE VALUE",
+			"type": "string"
+		},
+		{
+			"key": "TokenUser3",
+			"value": "PASTE VALUE",
 			"type": "string"
 		}
 	]

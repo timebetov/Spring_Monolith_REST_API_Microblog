@@ -7,7 +7,10 @@ import com.github.timebetov.microblog.models.User;
 import com.github.timebetov.microblog.models.UserDetailsImpl;
 import com.github.timebetov.microblog.repository.MomentDao;
 import com.github.timebetov.microblog.repository.UserDao;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -16,6 +19,7 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -24,9 +28,12 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.List;
+import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -34,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-public class MomentControllerTest {
+class MomentControllerTest {
 
     private MockMvc mockMvc;
 
@@ -53,7 +60,8 @@ public class MomentControllerTest {
     @Autowired
     private UserDao userDao;
 
-    UserDetailsImpl user;
+    UserDetailsImpl user1;
+    UserDetailsImpl user2;
     UserDetailsImpl admin;
 
     @BeforeEach
@@ -66,19 +74,23 @@ public class MomentControllerTest {
         jdbcTemplate.execute("INSERT INTO users (user_id, email, username, password, role, created_at, created_by) " +
                 "VALUES (1, 'user1@test.com', 'user1', 'user1PWD', 'USER', CURRENT_TIMESTAMP, 'SYSTEM')");
         jdbcTemplate.execute("INSERT INTO users (user_id, email, username, password, role, created_at, created_by) " +
-                "VALUES (2, 'admin@test.com', 'admin', 'adminPWD', 'ADMIN', CURRENT_TIMESTAMP, 'SYSTEM')");
+                "VALUES (2, 'user2@test.com', 'user2', 'user2PWD', 'USER', CURRENT_TIMESTAMP, 'SYSTEM')");
+        jdbcTemplate.execute("INSERT INTO users (user_id, email, username, password, role, created_at, created_by) " +
+                "VALUES (3, 'admin@test.com', 'admin', 'adminPWD', 'ADMIN', CURRENT_TIMESTAMP, 'SYSTEM')");
+
+        user1 = UserDetailsImpl.builder().username("user1").userId(1L).role("USER").build();
+        user2 = UserDetailsImpl.builder().username("user2").userId(2L).role("USER").build();
+        admin = UserDetailsImpl.builder().username("admin").userId(3L).role("ADMIN").build();
+
         jdbcTemplate.execute("INSERT INTO moments (moment_id, text, visibility, author_id, created_at, created_by) " +
-                "VALUES ('1ee1704a-f1af-474a-b18c-04bfd0210865', 'Lorem ipsum plain text', 'PUBLIC', 2, CURRENT_TIMESTAMP, 'SYSTEM')");
+                "VALUES ('1ee1704a-f1af-474a-b18c-04bfd0210865', 'Lorem ipsum plain text', 'PUBLIC', 1, CURRENT_TIMESTAMP, 'SYSTEM')");
         jdbcTemplate.execute("INSERT INTO moments (moment_id, text, visibility, author_id, created_at, created_by) " +
-                "VALUES ('ee3e6649-5f75-45fb-a492-a5e037b8f545', 'Lorem ipsum plain text', 'DRAFT', 2, CURRENT_TIMESTAMP, 'SYSTEM')");
+                "VALUES ('ee3e6649-5f75-45fb-a492-a5e037b8f545', 'Lorem ipsum plain text', 'DRAFT', 1, CURRENT_TIMESTAMP, 'SYSTEM')");
     }
 
-    @BeforeEach
-    void setAuth() {
-        user = new UserDetailsImpl(1L, "user1", "user1@test.com", "user1PWD", "USER");
-        admin = new UserDetailsImpl(100L, "admin", "admin@test.com", "adminPWD", "ADMIN");
+    private void setAuth(UserDetailsImpl user) {
 
-        Authentication authentication = new TestingAuthenticationToken(user, null, "ROLE_USER");
+        Authentication authentication = new TestingAuthenticationToken(user, null, user.getAuthorities());
         authentication.setAuthenticated(true);
 
         SecurityContext secContext = SecurityContextHolder.createEmptyContext();
@@ -97,11 +109,13 @@ public class MomentControllerTest {
      * </ul>
      *
      * Preconditions:
-     * - There should be exactly 1 Moment in the DB before this test runs.
+     * - There should be exactly 2 Moment in the DB before this test runs.
      */
     @Test
     @DisplayName("should save a new moment with valid data")
     void shouldSaveMoment() throws Exception {
+
+        setAuth(user2);
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("Some plain text from a new moment with PUBLIC visibility")
@@ -110,11 +124,13 @@ public class MomentControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(req)))
+                        .content(objectMapper.writeValueAsString(req))
+                )
+                .andDo(print())
                 .andExpect(status().isCreated());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(3, moments.size());
+        assertEquals(3, moments.size());
     }
 
     /**
@@ -148,7 +164,7 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(2, moments.size());
+        assertEquals(2, moments.size());
     }
 
     /**
@@ -180,7 +196,7 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(2, moments.size());
+        assertEquals(2, moments.size());
     }
 
     /**
@@ -211,12 +227,14 @@ public class MomentControllerTest {
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
-        Assertions.assertEquals(2, moments.size());
+        assertEquals(2, moments.size());
     }
 
     @Test
     @DisplayName("should return all PUBLIC moments when requesting without defining author id and visibility")
     void shouldReturnPublicMomentsWhenRequestingNullAuthorIdAndVisibility() throws Exception {
+
+        setAuth(user1);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/"))
                 .andExpect(status().isOk())
@@ -227,8 +245,10 @@ public class MomentControllerTest {
     @DisplayName("should return moments when retrieving with given author id and visibility")
     void shouldReturnMomentsWhenRetrievingWithGivenAuthorIdAndVisibility() throws Exception {
 
+        setAuth(user2);
+
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
-                        .queryParam("authorId", String.valueOf(2))
+                        .queryParam("authorId", String.valueOf(1))
                         .queryParam("visibility", "PUBLIC"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)));
@@ -237,6 +257,8 @@ public class MomentControllerTest {
     @Test
     @DisplayName("should return HttpStatus.NOT_FOUND when retrieving with not existing author id")
     void shouldReturnAuthorNotFoundWhenRetrievingMoments() throws Exception {
+
+        setAuth(admin);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
                         .queryParam("authorId", String.valueOf(99)))
@@ -247,6 +269,8 @@ public class MomentControllerTest {
     @DisplayName("should return HttpStatus.BAD_REQUEST when retrieving with not valid visibility type")
     void shouldReturnInvalidVisibilityBadRequestWhenRetrievingMoments() throws Exception {
 
+        setAuth(user1);
+
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
                         .queryParam("visibility", "NONE"))
                 .andExpect(status().isBadRequest());
@@ -255,6 +279,8 @@ public class MomentControllerTest {
     @Test
     @DisplayName("should return empty list when retrieving drafts of another user")
     void shouldReturnEmptyListWhenRetrievingDraftsOfAnotherUser() throws Exception {
+
+        setAuth(user2);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
                         .queryParam("visibility", "DRAFT"))
@@ -275,9 +301,11 @@ public class MomentControllerTest {
     @DisplayName("should return moment from db")
     void shouldReturnMomentFromDb() throws Exception {
 
+        setAuth(user1);
+
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.authorId", is(2)))
+                .andExpect(jsonPath("$.authorId", is(1)))
                 .andExpect(jsonPath("$.visibility", is("PUBLIC")))
                 .andExpect(jsonPath("$.id", is("1ee1704a-f1af-474a-b18c-04bfd0210865")));
     }
@@ -285,6 +313,8 @@ public class MomentControllerTest {
     @Test
     @DisplayName("should return HttpStatus.INTERNAL_SERVER_ERROR when retrieving moment by invalid uuid format")
     void shouldReturnInternalServerErrorWhenRetrievingMomentInvalidUUId() throws Exception {
+
+        setAuth(user1);
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/adsda"))
                 .andExpect(jsonPath("$.errorMessage", is("Invalid UUID string: adsda")))
@@ -295,6 +325,8 @@ public class MomentControllerTest {
     @DisplayName("should return HttpStatus.NOT_FOUND when retrieving non-existing moment by id")
     void shouldReturnMomentNotFoundWhenRetrievingMomentById() throws Exception {
 
+        setAuth(user1);
+
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/1ee1304a-f1af-474a-b18c-03cfd0210845"))
                 .andExpect(status().isNotFound());
     }
@@ -303,15 +335,7 @@ public class MomentControllerTest {
     @DisplayName("should return HttpStatus.OK, update and save moment in db")
     void shouldUpdateAndSaveMoment() throws Exception {
 
-        // Authenticate as ADMIN
-        SecurityContextHolder.clearContext();
-
-        Authentication authentication = new TestingAuthenticationToken(admin, null, admin.getAuthorities());
-        authentication.setAuthenticated(true);
-
-        SecurityContext secContext = SecurityContextHolder.createEmptyContext();
-        secContext.setAuthentication(authentication);
-        SecurityContextHolder.setContext(secContext);
+        setAuth(admin);
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("UPDATED TEXT")
@@ -323,14 +347,17 @@ public class MomentControllerTest {
                         .content(objectMapper.writeValueAsString(req)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
-                .andExpect(jsonPath("$.text", is("UPDATED TEXT")))
-                .andExpect(jsonPath("$.visibility", is("DRAFT")));
+        momentDao.findById(UUID.fromString("1ee1704a-f1af-474a-b18c-04bfd0210865")).ifPresent(m -> {
+            assertEquals("UPDATED TEXT", m.getText());
+            assertEquals(Moment.Visibility.DRAFT, m.getVisibility());
+        });
     }
 
     @Test
     @DisplayName("should not update cause neither author nor admin")
     void shouldNotUpdateMomentCauseNeitherAuthorOrAdmin() throws Exception {
+
+        setAuth(user2);
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("UPDATED TEXT")
@@ -362,6 +389,8 @@ public class MomentControllerTest {
     @DisplayName("should return HttpStatus.NOT_FOUND when updating non existing moment")
     void shouldReturnMomentNotFoundWhenUpdating() throws Exception {
 
+        setAuth(user1);
+
         mockMvc.perform(MockMvcRequestBuilders.put("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210825")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(RequestMomentDTO.builder().text("JUST TEXT").build())))
@@ -388,15 +417,7 @@ public class MomentControllerTest {
     @DisplayName("should delete moment by id")
     void shouldDeleteMomentById() throws Exception {
 
-        // Authenticate as ADMIN
-        SecurityContextHolder.clearContext();
-
-        Authentication authentication = new TestingAuthenticationToken(admin, null, admin.getAuthorities());
-        authentication.setAuthenticated(true);
-
-        SecurityContext secContext = SecurityContextHolder.createEmptyContext();
-        secContext.setAuthentication(authentication);
-        SecurityContextHolder.setContext(secContext);
+        setAuth(user1);
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
                 .andExpect(status().isNoContent());
@@ -406,6 +427,8 @@ public class MomentControllerTest {
     @DisplayName("should not delete cause neither author nor admin")
     void shouldNotDeleteMomentCauseNeitherAuthorOrAdmin() throws Exception {
 
+        setAuth(user2);
+
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210865"))
                 .andExpect(status().isForbidden());
     }
@@ -414,12 +437,14 @@ public class MomentControllerTest {
     @DisplayName("should throw HttpStatus.NOT_FOUND when deleting moment by id")
     void shouldThrowMomentNotFoundWhenDeleting() throws Exception {
 
+        setAuth(user1);
+
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/moments/1ee1704a-f1af-474a-b18c-04bfd0210825"))
                 .andExpect(status().isNotFound());
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         SecurityContextHolder.clearContext();
         jdbcTemplate.execute("DELETE FROM moments");
         jdbcTemplate.execute("DELETE FROM users");

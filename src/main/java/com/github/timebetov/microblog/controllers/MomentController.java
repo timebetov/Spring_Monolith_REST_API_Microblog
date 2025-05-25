@@ -22,13 +22,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping(value = "/moments", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
-@Validated
 public class MomentController {
 
     private final IMomentService momentService;
 
     @PostMapping("/")
-    public ResponseEntity<ResponseDTO> createMoment(@Valid @RequestBody RequestMomentDTO moment) {
+    public ResponseEntity<ResponseDTO> createMoment(@RequestBody @Valid RequestMomentDTO moment) {
 
         Long authorId = SecurityUtils.getCurrentUserId();
         momentService.createMoment(authorId, moment);
@@ -37,10 +36,18 @@ public class MomentController {
                 .body(new ResponseDTO(HttpStatus.CREATED, "Moments created successfully"));
     }
 
+    @GetMapping("/my")
+    public ResponseEntity<List<MomentDTO>> getMyMoments(@RequestParam(required = false) String visibility) {
+
+        CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
+        List<MomentDTO> result = momentService.getMoments(currentUser.getUserId(), visibility, currentUser);
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
+
     @GetMapping("/")
     public ResponseEntity<List<MomentDTO>> getAllMoments(
             @RequestParam(required = false) Long authorId,
-            @RequestParam(required = false) @EnumValues(enumClass = Moment.Visibility.class) String visibility) {
+            @RequestParam(required = false) String visibility) {
 
         CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
         List<MomentDTO> result = momentService.getMoments(authorId, visibility, currentUser);
@@ -58,7 +65,7 @@ public class MomentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MomentDTO> updateMoment(@PathVariable("id") String id, @Valid @RequestBody RequestMomentDTO moment) {
+    public ResponseEntity<MomentDTO> updateMoment(@PathVariable("id") String id, @RequestBody @Valid RequestMomentDTO moment) {
 
         CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
         momentService.updateMoment(UUID.fromString(id), moment, currentUser);

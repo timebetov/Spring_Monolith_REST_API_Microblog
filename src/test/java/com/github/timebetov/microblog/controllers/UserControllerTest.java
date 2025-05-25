@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.timebetov.microblog.dtos.user.CreateUserDTO;
 import com.github.timebetov.microblog.dtos.user.UpdateUserDTO;
 import com.github.timebetov.microblog.models.User;
+import com.github.timebetov.microblog.models.UserDetailsImpl;
 import com.github.timebetov.microblog.repository.UserDao;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.TestingAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
@@ -32,7 +37,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-public class UserControllerTest {
+class UserControllerTest {
+
+    private MockMvc mockMvc;
 
     @Autowired
     private WebApplicationContext context;
@@ -42,8 +49,6 @@ public class UserControllerTest {
 
     @Autowired
     private UserDao userDao;
-
-    private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -55,9 +60,21 @@ public class UserControllerTest {
                 .build();
 
         jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
-                "VALUES (3, 'admin', 'admin@test.com', 'passwordAdmin', CURRENT_TIMESTAMP, 'SYSTEM', 'ADMIN')");
+                "VALUES (30, 'admin', 'admin@test.com', 'passwordAdmin', CURRENT_TIMESTAMP, 'SYSTEM', 'ADMIN')");
         jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
-                "VALUES (2, 'user', 'user@test.com', 'passwordUser', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
+                "VALUES (20, 'user', 'user@test.com', 'passwordUser', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
+        jdbcTemplate.execute("INSERT INTO users (user_id, username, email, password, created_at, created_by, role) " +
+                "VALUES (40, 'user1', 'user1@test.com', 'passwordUser1', CURRENT_TIMESTAMP, 'SYSTEM', 'USER')");
+    }
+
+    private void setAuth(UserDetailsImpl user) {
+
+        Authentication authentication = new TestingAuthenticationToken(user, null, "ROLE_USER");
+        authentication.setAuthenticated(true);
+
+        SecurityContext secContext = SecurityContextHolder.createEmptyContext();
+        secContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(secContext);
     }
 
     @Test
@@ -165,8 +182,8 @@ public class UserControllerTest {
                 .build();
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/users/create")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(longPasswordDTO)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(longPasswordDTO)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.errorCode", is(HttpStatus.BAD_REQUEST.name())))
@@ -180,14 +197,14 @@ public class UserControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(jsonPath("$", hasSize(3)));
     }
 
     @Test
     @DisplayName("should return user with given ID")
     void shouldReturnUserById() throws Exception {
 
-        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/2"))
+        mockMvc.perform(MockMvcRequestBuilders.get("/api/users/fetch/20"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.username", is("user")))
@@ -235,7 +252,7 @@ public class UserControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.email", is("user@test.com")))
-                .andExpect(jsonPath("$.id", is(2)))
+                .andExpect(jsonPath("$.id", is(20)))
                 .andExpect(jsonPath("$.role", is("USER")));
     }
 
@@ -250,30 +267,82 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("should return HttpStatus.OK & Update and save user in DB")
-    void shouldUpdateAndSaveUserById() throws Exception {
+    @DisplayName("should return HttpStatus.OK & Update and save user in DB as ADMIN")
+    void shouldUpdateAndSaveUserByIdAsAdmin() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
 
         UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
                 .username("updatedUsername")
                 .bio("updatedBio")
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/20")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(updateUserDTO)))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.message", is("User updated successfully")));
 
-        Optional<User> updatedUser = userDao.findById(2L);
+        Optional<User> updatedUser = userDao.findById(20L);
         assertTrue(updatedUser.isPresent(), "User not found");
         assertEquals("updatedUsername", updatedUser.get().getUsername(), "username was not updated");
         assertEquals("updatedBio", updatedUser.get().getBio(), "bio was not updated");
     }
 
     @Test
-    @DisplayName("should return HttpStatus.NOT_FOUND, Invalid user_id when updating user")
-    void shouldReturnIdNotFoundWhenUpdatingUser() throws Exception {
+    @DisplayName("should return HttpStatus.OK & Update and save user in DB as AUTHOR")
+    void shouldUpdateAndSaveUserByIdAsAuthor() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(20L).role("USER").build());
+
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("updatedUsername")
+                .bio("updatedBio")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/20")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateUserDTO)))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message", is("User updated successfully")));
+
+        Optional<User> updatedUser = userDao.findById(20L);
+        assertTrue(updatedUser.isPresent(), "User not found");
+        assertEquals("updatedUsername", updatedUser.get().getUsername(), "username was not updated");
+        assertEquals("updatedBio", updatedUser.get().getBio(), "bio was not updated");
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.FORBIDDEN when updating other user")
+    void shouldReturnForbiddenWhenUpdatingUser() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(40L).role("USER").build());
+
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
+                .username("updatedUsername")
+                .bio("updatedBio")
+                .build();
+
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/20")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateUserDTO)))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.errorMessage", is("You don't have permission to access this resource")));
+
+        Optional<User> updatedUser = userDao.findById(20L);
+        assertTrue(updatedUser.isPresent(), "User not found");
+        assertEquals("user", updatedUser.get().getUsername(), "username was updated");
+        assertNull(updatedUser.get().getBio(), "bio was updated");
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.NOT_FOUND user_id not found when updating user as admin")
+    void shouldReturnIdNotFoundWhenUpdatingUserAsAdmin() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
 
         UpdateUserDTO dto = UpdateUserDTO.builder().build();
 
@@ -288,9 +357,11 @@ public class UserControllerTest {
     @DisplayName("should return HttpStatus.BAD_REQUEST, Username already taken when updating user")
     void shouldReturnUsernameAlreadyTakenBadRequestWhenUpdatingUser() throws Exception {
 
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
+
         UpdateUserDTO dto = UpdateUserDTO.builder().username("admin").build();
 
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/20")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -298,11 +369,13 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("should return HttpStatus.BAD_REQUEST, Email already taken when updaing user")
+    @DisplayName("should return HttpStatus.BAD_REQUEST, Email already taken when updating user")
     void shouldReturnEmailAlreadyTakenBadRequestWhenUpdatingUser() throws Exception {
 
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
+
         UpdateUserDTO dto = UpdateUserDTO.builder().email("admin@test.com").build();
-        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/2")
+        mockMvc.perform(MockMvcRequestBuilders.put("/api/users/20")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isBadRequest())
@@ -313,17 +386,35 @@ public class UserControllerTest {
     @DisplayName("should return HttpStatus.OK, Affect in DB when deleting user")
     void shouldReturnOkWhenDeletingUser() throws Exception {
 
-        mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/2"))
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/20"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
 
-        Optional<User> user = userDao.findById(2L);
+        Optional<User> user = userDao.findById(20L);
         assertFalse(user.isPresent(), "User was not deleted");
+    }
+
+    @Test
+    @DisplayName("should return HttpStatus.FORBIDDEN when deleting other user")
+    void shouldReturnForbiddenWhenDeletingUser() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(40L).role("USER").build());
+
+        mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/20"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+
+        Optional<User> user = userDao.findById(20L);
+        assertTrue(user.isPresent(), "User was deleted");
     }
 
     @Test
     @DisplayName("should return HttpStatus.NOT_FOUND, Id not found when deleting user by id")
     void shouldReturnIdNotFoundWhenDeletingUser() throws Exception {
+
+        setAuth(UserDetailsImpl.builder().userId(30L).role("ADMIN").build());
 
         mockMvc.perform(MockMvcRequestBuilders.delete("/api/users/1040"))
                 .andExpect(status().isNotFound())
@@ -332,6 +423,7 @@ public class UserControllerTest {
 
     @AfterEach
     void tearDown() {
+        SecurityContextHolder.clearContext();
         jdbcTemplate.execute("DELETE FROM user_follows");
         jdbcTemplate.execute("DELETE FROM users");
     }

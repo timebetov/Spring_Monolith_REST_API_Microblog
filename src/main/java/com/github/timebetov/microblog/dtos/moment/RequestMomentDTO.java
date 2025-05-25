@@ -3,7 +3,6 @@ package com.github.timebetov.microblog.dtos.moment;
 import com.github.timebetov.microblog.models.Moment;
 import com.github.timebetov.microblog.validations.EnumValues;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

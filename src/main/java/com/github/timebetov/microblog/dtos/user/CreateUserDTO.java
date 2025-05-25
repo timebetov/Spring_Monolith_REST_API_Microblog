@@ -3,6 +3,7 @@ package com.github.timebetov.microblog.dtos.user;
 import com.github.timebetov.microblog.validations.FieldsValueMatch;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,9 +29,11 @@ public class CreateUserDTO {
     @Email(message = "Email is not a valid")
     private String email;
 
+    @NotNull(message = "Password must be not null")
     @Size(min = 8, max = 20, message = "Password must be between 8 and 20 characters long")
     private String password;
 
+    @NotNull(message = "Confirm Password must be not null")
     @Size(min = 8, max = 20, message = "Confirm Password must be between 8 and 20 characters long")
     private String confirmPassword;
 }
