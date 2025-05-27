@@ -79,12 +79,10 @@ class MomentServiceTest {
 
         RequestMomentDTO reqMomentDTO = RequestMomentDTO.builder()
                 .text("FOR ALL USERS")
-                .visibility("PUBLIC")
                 .build();
 
         author.setUserId(1L);
         moment.setAuthor(author);
-
         moment.setVisibility(Moment.Visibility.PUBLIC);
 
         when(userDao.findById(1L)).thenReturn(Optional.of(author));
@@ -105,33 +103,6 @@ class MomentServiceTest {
         verify(momentDao, times(1)).save(any(Moment.class));
     }
 
-    @Test
-    @DisplayName("should save new moment when visibility type not defined")
-    void shouldSaveNewMomentWhenVisibilityTypeNotDefined() {
-
-        RequestMomentDTO req = RequestMomentDTO.builder()
-                .text("FOR ALL USERS")
-                .build();
-
-        author.setUserId(1L);
-        moment.setAuthor(author);
-        moment.setVisibility(Moment.Visibility.PUBLIC);
-
-        when(userDao.findById(1L)).thenReturn(Optional.of(author));
-        when(momentDao.save(any(Moment.class))).thenReturn(moment);
-
-        momentService.createMoment(1L, req);
-        ArgumentCaptor<Moment> momentCaptor = ArgumentCaptor.forClass(Moment.class);
-        verify(momentDao).save(momentCaptor.capture());
-        Moment createdMoment = momentCaptor.getValue();
-        assertNotNull(createdMoment, "Created moment should not be null");
-        assertEquals("FOR ALL USERS", createdMoment.getText());
-        assertEquals(1L, moment.getAuthor().getUserId());
-        assertEquals(Moment.Visibility.PUBLIC, moment.getVisibility());
-        verify(userDao, times(1)).findById(1L);
-        verify(momentDao, times(1)).save(any(Moment.class));
-    }
-
     /**
      * <h4>Tests saving a moment fails when giving non-existing author ID.</h4>
      *
@@ -140,7 +111,7 @@ class MomentServiceTest {
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when saving moment with non-existing authorId")
-    void shouldThrowExceptionWhenSavingMomentWithNonExistingAuthorId() {
+    void shouldThrowResourceNotFoundExceptionWhenSavingMomentWithNonExistingAuthorId() {
 
         when(userDao.findById(100L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.createMoment(100L, new RequestMomentDTO()));
@@ -183,17 +154,24 @@ class MomentServiceTest {
     }
 
     /**
-     * <h4>Tests that retrieving a moment with valid ID but not existing one throws an exception</h4>
+     * <h4>Tests that retrieving a moment with valid ID but not existing one, throws an exception</h4>
      *
      * <p><b>Expected:</b> {@link com.github.timebetov.microblog.exceptions.ResourceNotFoundException} is thrown.</p>
      */
     @Test
     @DisplayName("should throw ResourceNotFoundException when retrieving non-existing moment")
-    void shouldThrowResourceNotFoundExceptionWhenRetrievingMomentWithNonExistingId() {
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingMomentById() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> momentService.getMomentById(UUID.randomUUID(), currentUser));
         verify(momentDao, times(1)).findById(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("should throw IllegalArgumentException when retrieving moment by id with null current user")
+    void shouldThrowIllegalArgumentExceptionWhenRetrievingMomentByIdWithNullCurrentUser() {
+
+        assertThrows(IllegalArgumentException.class, () -> momentService.getMomentById(UUID.randomUUID(), null));
     }
 
     @ParameterizedTest
@@ -289,48 +267,16 @@ class MomentServiceTest {
         );
     }
 
-    /**
-     * <h4>Tests that a moment is updated and saved correctly.</h4>
-     * <p>
-     *     Only <i>Admin</i>s and <i>Author</i>s themselves have permissions to perform updating.
-     * </p>
-     *
-     * <ul>
-     *     <li><b>Given:</b> An existing moment and a valid {@link RequestMomentDTO} update payload.</li>
-     *     <li><b>When:</b> The {@code updateMoment} method is called.</li>
-     *     <li><b>Then:</b> The moment should be updated with the new data and persisted.</li>
-     * </ul>
-     */
-    @ParameterizedTest
-    @DisplayName("should update and save moment based on access rules")
-    @MethodSource("accessCases")
-    void shouldUpdateMomentBasedOnAccessRules(boolean isAuthor, boolean isAdmin, boolean canAccess) {
+    @Test
+    void shouldUpdateMomentAndSave() {
 
-        Long authorId = 10L;
-        Long currentUserId = isAuthor ? authorId : 20L;
-        author.setUserId(authorId);
-        moment.setAuthor(author);
-
-        RequestMomentDTO requestMomentDTO = RequestMomentDTO.builder()
-                .text("updated text".toUpperCase())
-                .visibility("DRAFT")
+        RequestMomentDTO momentDetails = RequestMomentDTO.builder()
+                .text("UPDATED TEXT")
                 .build();
-
-        when(currentUser.getUserId()).thenReturn(currentUserId);
-        if (!isAuthor) {
-            when(currentUser.isAdmin()).thenReturn(isAdmin);
-        }
-
         when(momentDao.findById(momentID)).thenReturn(Optional.of(moment));
-
-        if (canAccess) {
-            assertDoesNotThrow(() -> momentService.updateMoment(momentID, requestMomentDTO, currentUser));
-            verify(momentDao, times(1)).findById(momentID);
-            verify(momentDao, times(1)).save(moment);
-        } else {
-            assertThrows(AccessDeniedException.class, () -> momentService.updateMoment(momentID, requestMomentDTO, currentUser));
-            verify(momentDao, never()).save(moment);
-        }
+        assertDoesNotThrow(() -> momentService.updateMoment(momentID, momentDetails, author.getUserId()));
+        verify(momentDao, times(1)).findById(momentID);
+        verify(momentDao, times(1)).save(any(Moment.class));
     }
 
     /**
@@ -343,45 +289,18 @@ class MomentServiceTest {
     void shouldThrowResourceNotFoundExceptionWhenUpdatingMomentWithNonExistingId() {
 
         when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> momentService.updateMoment(UUID.randomUUID(), null, currentUser));
+        assertThrows(ResourceNotFoundException.class, () -> momentService.updateMoment(UUID.randomUUID(), null, null));
         verify(momentDao, times(1)).findById(any(UUID.class));
     }
 
-    /**
-     * <h4>Tests that a moment is successfully deleted when a valid and existing ID is provided.</h4>
-     * <p>
-     *     Only <i>Admin</i>s and <i>Author</i>s themselves have permissions to perform deletion.
-     * </p>
-     *
-     * <p><b>Expected:</b> After deletion, attempting to retrieve the moment results in {@link com.github.timebetov.microblog.exceptions.ResourceNotFoundException}.</p>
-     */
-    @ParameterizedTest
-    @DisplayName("should delete moment based on access rules")
-    @MethodSource("accessCases")
-    void shouldDeleteMomentBasedOnAccessRules(boolean isAuthor, boolean isAdmin, boolean canAccess) {
+    @Test
+    void shouldDeleteMomentById() {
 
-        Long authorId = 10L;
-        Long currentUserId = isAuthor ? authorId : 20L;
-        author.setUserId(authorId);
-        moment.setAuthor(author);
+        UUID id = UUID.randomUUID();
 
-        when(currentUser.getUserId()).thenReturn(currentUserId);
-        if (!isAuthor) {
-            when(currentUser.isAdmin()).thenReturn(isAdmin);
-        }
-
-        when(momentDao.findById(momentID))
-                .thenReturn(Optional.of(moment))
-                .thenReturn(Optional.empty());
-        if (canAccess) {
-            assertDoesNotThrow(() -> momentService.deleteMoment(momentID, currentUser));
-            verify(momentDao, times(1)).findById(momentID);
-            verify(momentDao, times(1)).delete(moment);
-            assertThrows(ResourceNotFoundException.class, () -> momentService.deleteMoment(momentID, currentUser));
-        } else {
-            assertThrows(AccessDeniedException.class, () -> momentService.deleteMoment(momentID, currentUser));
-            verify(momentDao, never()).delete(moment);
-        }
+        doNothing().when(momentDao).deleteById(id);
+        assertDoesNotThrow(() -> momentService.deleteMoment(id, 1L));
+        verify(momentDao, times(1)).deleteById(id);
     }
 
     /**
@@ -390,22 +309,22 @@ class MomentServiceTest {
      * <p><b>Expected:</b> {@link com.github.timebetov.microblog.exceptions.ResourceNotFoundException} is thrown.</p>
      */
     @Test
-    @DisplayName("should throw ResourceNotFoundException when attempting non-existing moment")
-    void shouldThrowResourceNotFoundExceptionWhenDeletingMomentWithNonExistingId() {
+    @DisplayName("should throw ResourceNotFoundException when retrieving moment author id")
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingMomentAuthorIdWithNonExistingId() {
 
-        when(momentDao.findById(any(UUID.class))).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> momentService.deleteMoment(UUID.randomUUID(), currentUser));
-        verify(momentDao, times(1)).findById(any(UUID.class));
+        when(momentDao.findAuthorIdByMomentId(any(UUID.class))).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> momentService.getAuthorId(UUID.randomUUID()));
+        verify(momentDao, times(1)).findAuthorIdByMomentId(any(UUID.class));
     }
 
+    @Test
+    @DisplayName("should return author id when retrieving by moment id")
+    void shouldReturnAuthorIdOfMomentById() {
 
-    private static Stream<Arguments> accessCases() {
-        return Stream.of(
-                Arguments.of(true, false, true),
-                Arguments.of(false, true, true),
-                Arguments.of(true, true, true),
-                Arguments.of(false, false, false)
-        );
+        UUID id = UUID.randomUUID();
+
+        when(momentDao.findAuthorIdByMomentId(id)).thenReturn(Optional.of(1L));
+        assertEquals(1L, momentService.getAuthorId(id));
+        verify(momentDao, times(1)).findAuthorIdByMomentId(id);
     }
-
 }

@@ -59,7 +59,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("should save new user when username and email are unique")
-    void shouldCreateUserWhenUsernameAndEmailAreUnique() {
+    void shouldCreateAndSaveUserWhenUsernameAndEmailAreUnique() {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("alexkey")
@@ -83,8 +83,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an AlreadyExistsException due to email has already taken")
-    void shouldThrowAlreadyExistsExceptionWhenSavingUserEmailAlreadyExists() {
+    @DisplayName("should throw an AlreadyExistsException when saving new user due to email has already taken")
+    void shouldThrowEmailAlreadyExistsExceptionWhenSavingUser() {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("alexkey")
@@ -99,8 +99,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an AlreadyExistsException due to username has already taken")
-    void shouldThrowAlreadyExistsExceptionWhenSavingUserUsernameAlreadyExists() {
+    @DisplayName("should throw an AlreadyExistsException when saving new user due to username has already taken")
+    void shouldThrowUsernameAlreadyExistsExceptionWhenSavingUser() {
 
         CreateUserDTO createUserDTO = CreateUserDTO.builder()
                 .username("alexkey")
@@ -116,7 +116,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("should return List containing 1 User")
-    void shouldReturnUsers() {
+    void shouldReturnUsersWhenRetrievingAllUsers() {
 
         when(userDao.findAll()).thenReturn(List.of(user));
         List<UserDTO> users = userService.getAllUsers();
@@ -127,8 +127,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should return empty list when there no user in db")
-    void shouldReturnEmptyList() {
+    @DisplayName("should return empty list when there no users in db")
+    void shouldReturnEmptyListUsersWhenRetrievingAllUsers() {
 
         when(userDao.findAll()).thenReturn(List.of());
         List<UserDTO> users = userService.getAllUsers();
@@ -140,7 +140,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("should return user by given username")
-    void shouldReturnUserByUsername() {
+    void shouldReturnUserWhenRetrievingByUsername() {
 
         when(userDao.findByUsername(any(String.class))).thenReturn(Optional.of(user));
 
@@ -154,8 +154,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an ResourceNotFoundException due to invalid username")
-    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserByInvalidUsername() {
+    @DisplayName("should throw an ResourceNotFoundException when retrieving user by username")
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserByUsername() {
 
         when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
 
@@ -165,7 +165,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("should return user by given email")
-    void shouldReturnUserByEmail() {
+    void shouldReturnUserWhenRetrievingByEmail() {
 
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.of(user));
         UserDTO foundUser = userService.getByEmail("alex@gmail.com");
@@ -179,8 +179,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an ResourceNotFoundException")
-    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserByInvalidEmail() {
+    @DisplayName("should throw an ResourceNotFoundException when retrieving user by email")
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserByEmail() {
 
         when(userDao.findByEmail(any(String.class))).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> userService.getByEmail("nonexistent@gmail.com"));
@@ -189,7 +189,7 @@ class UserServiceTest {
 
     @Test
     @DisplayName("should return user by given id")
-    void shouldReturnUserById() {
+    void shouldReturnUserWhenRetrievingById() {
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
 
@@ -203,8 +203,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an ResourceNotFoundException due to invalid id")
-    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserByInvalidId() {
+    @DisplayName("should throw an ResourceNotFoundException when retrieving user by given id")
+    void shouldThrowResourceNotFoundExceptionWhenRetrievingUserById() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> userService.getById(0L));
@@ -219,7 +219,6 @@ class UserServiceTest {
                 .username("updatedalexkey")
                 .email("updalex@gmail.com")
                 .password("newpassword")
-                .role("ADMIN")
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
@@ -241,12 +240,11 @@ class UserServiceTest {
         assertEquals("updatedalexkey", savedUser.getUsername());
         assertEquals("updalex@gmail.com", savedUser.getEmail());
         assertEquals("newpassword", savedUser.getPassword());
-        assertEquals(User.Role.ADMIN, savedUser.getRole());
     }
 
     @Test
-    @DisplayName("should throw an ResourceNotFoundException when updating by invalid id")
-    void shouldThrowResourceNotFoundExceptionWhenUpdatingUserByInvalidId() {
+    @DisplayName("should throw an ResourceNotFoundException when updating user by given id")
+    void shouldThrowResourceNotFoundExceptionWhenUpdatingUserById() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
 
@@ -255,8 +253,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an AlreadyExistsException due to username has already taken")
-    void shouldThrowAlreadyExistsExceptionWhenUpdatingUserUsernameAlreadyTaken() {
+    @DisplayName("should throw an AlreadyExistsException when updating due to username has already taken")
+    void shouldThrowUsernameAlreadyExistsExceptionWhenUpdatingUser() {
 
         User toUpdate = User.builder()
                 .username("testusername")
@@ -268,7 +266,6 @@ class UserServiceTest {
                 .username("alexkey")
                 .email("updalex@gmail.com")
                 .password("newpassword")
-                .role("ADMIN")
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
@@ -282,8 +279,8 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should throw an AlreadyExistsException due to Email has already taken")
-    void shouldThrowAlreadyExistsExceptionWhenUpdatingUserEmailAlreadyTaken() {
+    @DisplayName("should throw an AlreadyExistsException when updating due to Email has already taken")
+    void shouldThrowEmailAlreadyExistsExceptionWhenUpdatingUser() {
 
         User toUpdate = User.builder()
                 .username("testusername")
@@ -295,7 +292,6 @@ class UserServiceTest {
                 .username("alexkey")
                 .email("alex@gmail.com")
                 .password("newpassword")
-                .role("ADMIN")
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
@@ -310,20 +306,18 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("should delete user by id")
+    @DisplayName("should delete user by given id")
     void shouldDeleteUserById() {
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
-        boolean isDeleted = userService.deleteUser(1L);
-
-        assertTrue(isDeleted);
+        assertDoesNotThrow(() -> userService.deleteUser(1L));
         verify(userDao, times(1)).findById(1L);
         verify(userDao, times(1)).deleteById(1L);
     }
 
     @Test
     @DisplayName("should throw an ResourceNotFoundException when deleting not existing user")
-    void shouldThrowResourceNotFoundExceptionWhenDeletingUserByInvalidId() {
+    void shouldThrowResourceNotFoundExceptionWhenDeletingUserById() {
 
         when(userDao.findById(0L)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(0L));

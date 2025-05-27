@@ -12,8 +12,8 @@ public interface IMomentService {
     void createMoment(Long authorId, RequestMomentDTO momentDetails);
     List<MomentDTO> getMoments(Long authorId, String visibility, CurrentUserContext currentUser);
     MomentDTO getMomentById(UUID momentUUId, CurrentUserContext currentUser);
-    void updateMoment(UUID momentId, RequestMomentDTO momentDetails, CurrentUserContext currentUser);
-    void deleteMoment(UUID momentId, CurrentUserContext currentUser);
+    void updateMoment(UUID momentId, RequestMomentDTO momentDetails, Long authorId);
+    void deleteMoment(UUID momentId, Long authorId);
 
     Long getAuthorId(UUID momentUUId);
 }

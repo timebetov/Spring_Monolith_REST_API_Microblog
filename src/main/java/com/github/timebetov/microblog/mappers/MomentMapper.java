@@ -6,6 +6,8 @@ import com.github.timebetov.microblog.models.Moment;
 
 public class MomentMapper {
 
+    private MomentMapper() {}
+
     public static MomentDTO mapToMomentDTO(Moment moment) {
 
         MomentDTO result = new MomentDTO();

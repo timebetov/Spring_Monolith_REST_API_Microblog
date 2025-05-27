@@ -43,6 +43,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class MomentControllerTest {
 
+    private final String momentsURI = "/api/moments/";
+
     private MockMvc mockMvc;
 
     @Autowired
@@ -113,7 +115,7 @@ class MomentControllerTest {
      */
     @Test
     @DisplayName("should save a new moment with valid data")
-    void shouldSaveMoment() throws Exception {
+    void shouldReturnStatusCreatedWhenSavingMomentWithValidData() throws Exception {
 
         setAuth(user2);
 
@@ -122,11 +124,10 @@ class MomentControllerTest {
                 .visibility("PUBLIC")
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
+        mockMvc.perform(MockMvcRequestBuilders.post(momentsURI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(req))
                 )
-                .andDo(print())
                 .andExpect(status().isCreated());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
@@ -145,19 +146,19 @@ class MomentControllerTest {
      * </ul>
      *
      * Preconditions:
-     * - There should already be exactly 1 Moment in the DB before this test runs.
+     * - There should already be exactly 2 Moment in the DB before this test runs.
      */
 
     @Test
     @DisplayName("should not create moment invalid visibility type")
-    void shouldNotSaveMomentInvalidVisibilityType() throws Exception {
+    void shouldReturnStatusBadRequestWhenSavingMomentWithInvalidVisibilityType() throws Exception {
 
         RequestMomentDTO dto = RequestMomentDTO.builder()
                 .text("Some plain text from a new moment")
                 .visibility("NONE")
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
+        mockMvc.perform(MockMvcRequestBuilders.post(momentsURI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(jsonPath("$.errorDetails.visibility", is("Value must be one of: FOLLOWERS_ONLY, DRAFT, PUBLIC")))
@@ -178,21 +179,21 @@ class MomentControllerTest {
      * </ul>
      *
      * Preconditions:
-     * - There should already be exactly 1 Moment in the DB before this test runs
+     * - There should already be exactly 2 Moment in the DB before this test runs
      */
     @Test
     @DisplayName("should not save moment due to text null")
-    void shouldNotSaveMomentNullText() throws Exception {
+    void shouldReturnStatusBadRequestWhenSavingMomentWithNullText() throws Exception {
 
         RequestMomentDTO dto = RequestMomentDTO.builder()
                 .visibility("DRAFT")
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
+        mockMvc.perform(MockMvcRequestBuilders.post(momentsURI)
                         .queryParam("authorId", String.valueOf(2))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(jsonPath("$.errorDetails.text", is("Text must be not empty")))
+                .andExpect(jsonPath("$.errorDetails.text", is("Text cannot be blank")))
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
@@ -209,21 +210,21 @@ class MomentControllerTest {
      *      <li>No new Moment should be saved to the database.</li>
      * </ul>
      * Preconditions:
-     * - There should already be exactly 1 Moment in the DB before this test runs
+     * - There should already be exactly 2 Moment in the DB before this test runs
      */
     @Test
     @DisplayName("should not save moment due to text size too long")
-    void shouldNotSaveMomentTooLongTextSize() throws Exception {
+    void shouldReturnStatusBadRequestWhenSavingMomentWithTooLongTextSize() throws Exception {
 
         RequestMomentDTO dto = RequestMomentDTO.builder()
                 .text("A".repeat(501))
                 .visibility("DRAFT")
                 .build();
 
-        mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
+        mockMvc.perform(MockMvcRequestBuilders.post(momentsURI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(jsonPath("$.errorDetails.text", is("Text must contain only 500 characters")))
+                .andExpect(jsonPath("$.errorDetails.text", is("Text must contain maximum 500 characters")))
                 .andExpect(status().isBadRequest());
 
         List<Moment> moments = (List<Moment>) momentDao.findAll();
@@ -231,8 +232,19 @@ class MomentControllerTest {
     }
 
     @Test
+    @DisplayName("should return HttpStatus.OK and moments of current authenticated user")
+    void shouldReturnStatusOkAndMomentsWhenRequestingMyMoments() throws Exception {
+
+        setAuth(user1);
+
+        mockMvc.perform(MockMvcRequestBuilders.get(momentsURI + "/my"))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     @DisplayName("should return all PUBLIC moments when requesting without defining author id and visibility")
-    void shouldReturnPublicMomentsWhenRequestingNullAuthorIdAndVisibility() throws Exception {
+    void shouldReturnStatusOkAndPublicMomentsWhenRequestingNullAuthorIdAndVisibility() throws Exception {
 
         setAuth(user1);
 
@@ -243,7 +255,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return moments when retrieving with given author id and visibility")
-    void shouldReturnMomentsWhenRetrievingWithGivenAuthorIdAndVisibility() throws Exception {
+    void shouldReturnStatusOkAndMomentsWhenRetrievingWithGivenAuthorIdAndVisibility() throws Exception {
 
         setAuth(user2);
 
@@ -256,7 +268,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.NOT_FOUND when retrieving with not existing author id")
-    void shouldReturnAuthorNotFoundWhenRetrievingMoments() throws Exception {
+    void shouldReturnStatusNotFoundWhenRetrievingMomentsWithAuthorId() throws Exception {
 
         setAuth(admin);
 
@@ -267,7 +279,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.BAD_REQUEST when retrieving with not valid visibility type")
-    void shouldReturnInvalidVisibilityBadRequestWhenRetrievingMoments() throws Exception {
+    void shouldReturnStatusBadRequestWhenRetrievingMomentsWithNotValidVisibility() throws Exception {
 
         setAuth(user1);
 
@@ -278,7 +290,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return empty list when retrieving drafts of another user")
-    void shouldReturnEmptyListWhenRetrievingDraftsOfAnotherUser() throws Exception {
+    void shouldReturnStatusOkAndEmptyListWhenRetrievingDraftsOfAnotherUser() throws Exception {
 
         setAuth(user2);
 
@@ -294,12 +306,13 @@ class MomentControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.get("/api/moments/")
                         .queryParam("authorId", "abc"))
+                .andExpect(jsonPath("$.errorMessage", is("authorId")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    @DisplayName("should return moment from db")
-    void shouldReturnMomentFromDb() throws Exception {
+    @DisplayName("should return moment by id")
+    void shouldReturnStatusOkWhenRetrievingMomentById() throws Exception {
 
         setAuth(user1);
 
@@ -312,7 +325,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.INTERNAL_SERVER_ERROR when retrieving moment by invalid uuid format")
-    void shouldReturnInternalServerErrorWhenRetrievingMomentInvalidUUId() throws Exception {
+    void shouldReturnStatusInternalServerErrorWhenRetrievingMomentInvalidUUId() throws Exception {
 
         setAuth(user1);
 
@@ -323,7 +336,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.NOT_FOUND when retrieving non-existing moment by id")
-    void shouldReturnMomentNotFoundWhenRetrievingMomentById() throws Exception {
+    void shouldReturnStatusNotFoundWhenRetrievingMomentById() throws Exception {
 
         setAuth(user1);
 
@@ -333,7 +346,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.OK, update and save moment in db")
-    void shouldUpdateAndSaveMoment() throws Exception {
+    void shouldReturnStatusOkAndSaveMomentWhenUpdatingMoment() throws Exception {
 
         setAuth(admin);
 
@@ -354,8 +367,8 @@ class MomentControllerTest {
     }
 
     @Test
-    @DisplayName("should not update cause neither author nor admin")
-    void shouldNotUpdateMomentCauseNeitherAuthorOrAdmin() throws Exception {
+    @DisplayName("should not update and return HttpStatus.Forbidden cause neither author nor admin")
+    void shouldReturnStatusForbiddenWhenUpdatingMomentCauseNeitherAuthorOrAdmin() throws Exception {
 
         setAuth(user2);
 
@@ -372,7 +385,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.BAD_REQUEST, when updating requesting invalid visibility type")
-    void shouldReturnInvalidVisibilityBadRequestWhenUpdatingMoment() throws Exception {
+    void shouldReturnStatusBadRequestWhenUpdatingMomentWithInvalidVisibilityType() throws Exception {
 
         RequestMomentDTO req = RequestMomentDTO.builder()
                 .text("UPDATED TEXT")
@@ -387,7 +400,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should return HttpStatus.NOT_FOUND when updating non existing moment")
-    void shouldReturnMomentNotFoundWhenUpdating() throws Exception {
+    void shouldReturnStatusNotFoundWhenUpdating() throws Exception {
 
         setAuth(user1);
 
@@ -399,7 +412,7 @@ class MomentControllerTest {
 
     @Test
     @DisplayName("should not update and save moment due to text size too long")
-    void shouldNotUpdateMomentTooLongTextSize() throws Exception {
+    void shouldReturnStatusBadRequestWhenUpdatingMomentTooLongTextSize() throws Exception {
 
         RequestMomentDTO dto = RequestMomentDTO.builder()
                 .text("A".repeat(501))
@@ -409,13 +422,13 @@ class MomentControllerTest {
         mockMvc.perform(MockMvcRequestBuilders.post("/api/moments/")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(jsonPath("$.errorDetails.text", is("Text must contain only 500 characters")))
+                .andExpect(jsonPath("$.errorDetails.text", is("Text must contain maximum 500 characters")))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     @DisplayName("should delete moment by id")
-    void shouldDeleteMomentById() throws Exception {
+    void shouldReturnStatusNoContentWhenDeletingMomentById() throws Exception {
 
         setAuth(user1);
 
@@ -424,8 +437,8 @@ class MomentControllerTest {
     }
 
     @Test
-    @DisplayName("should not delete cause neither author nor admin")
-    void shouldNotDeleteMomentCauseNeitherAuthorOrAdmin() throws Exception {
+    @DisplayName("should not delete and return HttpStatus.Forbidden cause neither author nor admin")
+    void shouldReturnStatusForbiddenWhenDeletingMomentCauseNeitherAuthorNorAdmin() throws Exception {
 
         setAuth(user2);
 
@@ -434,8 +447,8 @@ class MomentControllerTest {
     }
 
     @Test
-    @DisplayName("should throw HttpStatus.NOT_FOUND when deleting moment by id")
-    void shouldThrowMomentNotFoundWhenDeleting() throws Exception {
+    @DisplayName("should return HttpStatus.NOT_FOUND when deleting moment by id")
+    void shouldReturnStatusNotFoundWhenDeleting() throws Exception {
 
         setAuth(user1);
 

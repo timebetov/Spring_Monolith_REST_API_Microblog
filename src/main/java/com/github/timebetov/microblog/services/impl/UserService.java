@@ -101,13 +101,11 @@ public class UserService implements IUserService {
 
     @OnlyOwnerOrAdmin(ownerIdParam = "userId")
     @Override
-    public boolean deleteUser(Long userId) {
+    public void deleteUser(Long userId) {
 
-        boolean result = true;
         if (userDao.findById(userId).isEmpty()) {
             throw new ResourceNotFoundException("User", "id", String.valueOf(userId));
         }
         userDao.deleteById(userId);
-        return result;
     }
 }

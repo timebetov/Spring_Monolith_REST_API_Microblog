@@ -65,18 +65,18 @@ public class MomentController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<MomentDTO> updateMoment(@PathVariable("id") String id, @RequestBody @Valid RequestMomentDTO moment) {
+    public ResponseEntity<Void> updateMoment(@PathVariable("id") String id, @RequestBody @Valid RequestMomentDTO moment) {
 
-        CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
-        momentService.updateMoment(UUID.fromString(id), moment, currentUser);
+        Long authorId = momentService.getAuthorId(UUID.fromString(id));
+        momentService.updateMoment(UUID.fromString(id), moment, authorId);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ResponseDTO> deleteMoment(@PathVariable("id") String id) {
+    public ResponseEntity<Void> deleteMoment(@PathVariable("id") String id) {
 
-        CurrentUserContext currentUser = SecurityUtils.getCurrentUserContext();
-        momentService.deleteMoment(UUID.fromString(id), currentUser);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        Long authorId = momentService.getAuthorId(UUID.fromString(id));
+        momentService.deleteMoment(UUID.fromString(id), authorId);
+        return ResponseEntity.noContent().build();
     }
 }

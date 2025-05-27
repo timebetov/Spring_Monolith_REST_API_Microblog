@@ -11,11 +11,13 @@ import com.github.timebetov.microblog.repository.MomentDao;
 import com.github.timebetov.microblog.repository.UserDao;
 import com.github.timebetov.microblog.services.IFollowService;
 import com.github.timebetov.microblog.services.IMomentService;
+import com.github.timebetov.microblog.validations.OnlyOwnerOrAdmin;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -119,19 +121,11 @@ public class MomentService implements IMomentService {
     }
 
     @Override
-    public void updateMoment(UUID momentId, RequestMomentDTO momentDetails, CurrentUserContext currentUser) {
-
-        if (currentUser == null || currentUser.getUserId() == null) {
-            throw new IllegalArgumentException("User is not logged in");
-        }
+    @OnlyOwnerOrAdmin(ownerIdParam = "authorId")
+    public void updateMoment(UUID momentId, RequestMomentDTO momentDetails, Long authorId) {
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "id", momentId.toString())
-        );
-
-        if (!foundMoment.getAuthor().getUserId().equals(currentUser.getUserId()) && !currentUser.isAdmin()) {
-            throw new AccessDeniedException("You don't have permission to update this moment");
-        }
+                () -> new ResourceNotFoundException("Moment", "id", String.valueOf(momentId)));
 
         if (momentDetails.getVisibility() != null) {
             foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility().toUpperCase()));
@@ -141,20 +135,10 @@ public class MomentService implements IMomentService {
     }
 
     @Override
-    public void deleteMoment(UUID momentId, CurrentUserContext currentUser) {
+    @OnlyOwnerOrAdmin(ownerIdParam = "authorId")
+    public void deleteMoment(UUID momentId, Long authorId) {
 
-        if (currentUser == null || currentUser.getUserId() == null) {
-            throw new IllegalArgumentException("User is not logged in");
-        }
-
-        Moment foundMoment = momentDao.findById(momentId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "id", momentId.toString()));
-
-        if (!foundMoment.getAuthor().getUserId().equals(currentUser.getUserId()) && !currentUser.isAdmin()) {
-            throw new AccessDeniedException("You don't have permission to delete this moment");
-        }
-
-        momentDao.delete(foundMoment);
+        momentDao.deleteById(momentId);
     }
 
     @Override

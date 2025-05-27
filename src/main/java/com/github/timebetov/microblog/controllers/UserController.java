@@ -21,7 +21,7 @@ import java.util.List;
 @RequestMapping(value = "/users", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
 public class UserController {
-
+    
     private final IUserService userService;
     private final IFollowService followService;
 
@@ -92,11 +92,9 @@ public class UserController {
     }
 
     @DeleteMapping("/{userId}")
-    public ResponseEntity<ResponseDTO> deleteUser(@PathVariable Long userId) {
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(new ResponseDTO(HttpStatus.OK, "User deleted successfully"));
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/follow/{userId}")

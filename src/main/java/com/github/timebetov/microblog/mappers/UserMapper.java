@@ -7,6 +7,8 @@ import com.github.timebetov.microblog.models.User;
 
 public class UserMapper {
 
+    private UserMapper() {}
+
     public static UserDTO mapToUserDTO(User user) {
 
         UserDTO userDTO = new UserDTO();
@@ -38,23 +40,20 @@ public class UserMapper {
 
     public static User mapUpdateDTOToUser(UpdateUserDTO userDTO, User user) {
 
-        if (userDTO.getUsername() != null) {
+        if (userDTO.getUsername() != null && !userDTO.getUsername().isBlank()) {
             user.setUsername(userDTO.getUsername());
         }
-        if (userDTO.getEmail() != null) {
+        if (userDTO.getEmail() != null && !userDTO.getEmail().isBlank()) {
             user.setEmail(userDTO.getEmail());
         }
-        if (userDTO.getPassword() != null) {
+        if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
             user.setPassword(userDTO.getPassword());
         }
-        if (userDTO.getBio() != null) {
+        if (userDTO.getBio() != null && !userDTO.getBio().isBlank()) {
             user.setBio(userDTO.getBio());
         }
-        if (userDTO.getPicture() != null) {
+        if (userDTO.getPicture() != null && !userDTO.getPicture().isBlank()) {
             user.setPicture(userDTO.getPicture());
-        }
-        if (userDTO.getRole() != null) {
-            user.setRole(User.Role.valueOf(userDTO.getRole()));
         }
         return user;
 
