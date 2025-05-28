@@ -55,8 +55,4 @@ public class User extends BaseEntity {
     @JsonIgnore
     @OneToMany(mappedBy = "author", targetEntity = Moment.class, fetch = FetchType.LAZY, cascade = CascadeType.REMOVE)
     private Set<Moment> moments;
-
-    @JsonIgnore
-    @OneToMany(mappedBy = "author", targetEntity = Comment.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Comment> comments;
 }

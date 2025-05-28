@@ -3,6 +3,7 @@ package com.github.timebetov.microblog.filters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.timebetov.microblog.configs.AppConstants;
 import com.github.timebetov.microblog.dtos.ErrorResponseDTO;
+import com.github.timebetov.microblog.services.impl.TokenBlacklistService;
 import com.github.timebetov.microblog.utils.JwtUtils;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -33,6 +34,7 @@ public class JwtTokenValidatorFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
     private final ObjectMapper objectMapper;
     private final UserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -51,6 +53,12 @@ public class JwtTokenValidatorFilter extends OncePerRequestFilter {
             }
 
             String jwt = token.substring("Bearer ".length());
+
+            if (tokenBlacklistService.isBlacklisted(jwt)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
+
             String username = jwtUtils.extractUsername(jwt);
 
             if (username == null || SecurityContextHolder.getContext().getAuthentication() != null) {

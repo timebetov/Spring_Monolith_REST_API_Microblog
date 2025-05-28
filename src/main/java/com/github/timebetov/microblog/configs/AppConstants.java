@@ -8,4 +8,5 @@ public class AppConstants {
     public static final String JWT_EXPIRATION_IN_MS = "app.jwt.expiration";
     public static final String JWT_ISSUER = "app.jwt.issuer";
     public static final String JWT_HEADER = "Authorization";
+    public static final String JWT_BLACKLISTED = "blacklisted";
 }

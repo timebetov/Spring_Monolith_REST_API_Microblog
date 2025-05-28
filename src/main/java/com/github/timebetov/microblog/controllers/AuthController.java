@@ -1,5 +1,6 @@
 package com.github.timebetov.microblog.controllers;
 
+import com.github.timebetov.microblog.configs.AppConstants;
 import com.github.timebetov.microblog.dtos.ResponseDTO;
 import com.github.timebetov.microblog.dtos.user.LoginUserDTO;
 import com.github.timebetov.microblog.services.impl.AuthService;
@@ -34,5 +35,12 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.OK)
                 .body(new ResponseDTO(HttpStatus.OK, "Authenticated, check Response headers"));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@RequestHeader(AppConstants.JWT_HEADER) String authHeader) {
+
+        authService.logout(authHeader);
+        return ResponseEntity.ok().build();
     }
 }

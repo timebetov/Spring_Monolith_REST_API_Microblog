@@ -50,9 +50,6 @@ public class Moment extends BaseEntity {
     @JoinColumn(name = "author_id", referencedColumnName = "userId", nullable = false)
     private User author;
 
-    @OneToMany(mappedBy = "moment", targetEntity = Comment.class, fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Comment> comments;
-
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Visibility visibility;
