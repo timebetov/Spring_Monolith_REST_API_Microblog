@@ -15,8 +15,8 @@ spring:
     name: ${APP_NAME:Microblog}
 
   redis:
-    host: localhost
-    port: 6379
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -25,6 +25,6 @@ server:
 
 app:
   jwt:
-    secretKey: ${JWT_SECRET_KEY:Zw1dsOA1hqSKlX9PVREovrt2S0h8AydmIvb4FwC/Ij4=}
+    secretKey: ${JWT_SECRET_KEY:0aa510556d7de40cf561df224f425b4c0e194fd34596043fa8fe3863092c26cc39617b700f67caaab2f4a07fabef47bd5f6dca4734f54d27ebc8ce484138d19bdbf96de5e514d3f4ef7c3e5d671011cfa61f60d74fcba94a0bdcf070223ad5bb64bc4722b13e696fa3c91945f5996b4df8728b48d79ada2748c4a05cb83f1aa3e832a063cc1d757fca771488079ba6de5cd24282c83ddf75181ca09e50dc7a346d7b9ec4c99266e2efc07631b4565d924f1a3bd27634fa914d3d2ef20f1b3264ccea97c30d54d1471b205b94b1039ff140b5f7dd88c72360f7d1daf3fc46b98989f626dd96ea6158033485bb335e7b932812dd00219669875b75b6c5abdb4c5b}
     expiration: ${JWT_SECRET_EXPIRATION:86400000}
     issuer: ${JWT_SECRET_ISSUER:microblog}

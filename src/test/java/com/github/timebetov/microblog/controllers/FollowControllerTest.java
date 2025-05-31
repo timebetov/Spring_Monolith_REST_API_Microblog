@@ -24,6 +24,7 @@ import org.springframework.web.context.WebApplicationContext;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -120,7 +121,7 @@ public class FollowControllerTest {
 
         mockMvc.perform(MockMvcRequestBuilders.post(followURI + nonExistingUserId))
                 .andExpect(jsonPath("$.errorMessage",
-                        is("User not found with the given input data followedId : '" + nonExistingUserId +
+                        is("User not found with the given input data : '" + nonExistingUserId +
                         "'")))
                 .andExpect(status().isNotFound());
     }
@@ -132,7 +133,7 @@ public class FollowControllerTest {
         setAuth(user1);
 
         mockMvc.perform(MockMvcRequestBuilders.post(followURI + user1.getUserId()))
-                .andExpect(jsonPath("$.errorMessage", is("Follower id cannot be the same as follower id")))
+                .andExpect(jsonPath("$.errorMessage", is("User cannot follow himself")))
                 .andExpect(status().isBadRequest());
     }
 
@@ -169,7 +170,7 @@ public class FollowControllerTest {
         setAuth(user1);
 
         mockMvc.perform(MockMvcRequestBuilders.delete(unfollowURI + user1.getUserId()))
-                .andExpect(jsonPath("$.errorMessage", is("Follower id cannot be the same as follower id")))
+                .andExpect(jsonPath("$.errorMessage", is("User cannot unfollow himself")))
                 .andExpect(status().isBadRequest());
     }
 

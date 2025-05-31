@@ -1,9 +1,11 @@
 package com.github.timebetov.microblog.configs;
 
-import com.github.timebetov.microblog.exceptionHandlers.AccessDenyHandler;
-import com.github.timebetov.microblog.exceptionHandlers.AuthEntryPointHandler;
+import com.github.timebetov.microblog.handlers.AccessDenyHandler;
+import com.github.timebetov.microblog.handlers.AuthEntryPointHandler;
 import com.github.timebetov.microblog.filters.JwtTokenGeneratorFilter;
 import com.github.timebetov.microblog.filters.JwtTokenValidatorFilter;
+import io.swagger.v3.oas.annotations.enums.SecuritySchemeType;
+import io.swagger.v3.oas.annotations.security.SecurityScheme;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +22,11 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 
 @Configuration
 @RequiredArgsConstructor
+@SecurityScheme(
+        name = "basicAuth",
+        type = SecuritySchemeType.HTTP,
+        scheme = "basic"                // Basic Auth
+)
 public class MicroblogSecurityConfig {
 
     private final JwtTokenGeneratorFilter jwtGeneratorFilter;
@@ -36,7 +43,13 @@ public class MicroblogSecurityConfig {
 
         http    // Routing
                 .authorizeHttpRequests((req) -> req
-                        .requestMatchers("/auth/login", "/users/create", "/error", "/auth/authenticate").permitAll()
+                        .requestMatchers("/auth/logout").authenticated()
+                        .requestMatchers(
+                                "/auth/**",
+                                "/error",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 );
 

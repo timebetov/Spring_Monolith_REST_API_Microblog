@@ -70,10 +70,10 @@
 							}
 						],
 						"url": {
-							"raw": "/fetch/2",
+							"raw": "/fetch/1",
 							"path": [
 								"fetch",
-								"2"
+								"1"
 							]
 						}
 					},
@@ -94,10 +94,10 @@
 							}
 						],
 						"url": {
-							"raw": "/fetch/@",
+							"raw": "/fetch/@<username>",
 							"path": [
 								"fetch",
-								"@"
+								"@<username>"
 							]
 						}
 					},
@@ -129,32 +129,6 @@
 					"response": []
 				},
 				{
-					"name": "/create",
-					"request": {
-						"auth": {
-							"type": "noauth"
-						},
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"username\": \"user\",\n    \"email\": \"user@gmail.com\",\n    \"password\": \"userPWD\",\n    \"confirmPassword\": \"userPWD\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "/create",
-							"path": [
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
 					"name": "/update",
 					"request": {
 						"auth": {
@@ -170,7 +144,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"updatedusername\",\n    \"bio\": \"QA Engineer\"\n}",
+							"raw": "{\n    \"username\": \"newusername\",\n    \"email\": \"newemail@mail.com\",\n    \"bio\": \"Hey, I am a software Engineer\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -178,9 +152,9 @@
 							}
 						},
 						"url": {
-							"raw": "/6",
+							"raw": "/1",
 							"path": [
-								"6"
+								"1"
 							]
 						}
 					},
@@ -201,9 +175,9 @@
 							}
 						],
 						"url": {
-							"raw": "/6",
+							"raw": "/1",
 							"path": [
-								"6"
+								"1"
 							]
 						}
 					},
@@ -313,9 +287,9 @@
 							}
 						],
 						"url": {
-							"raw": "/c1449429-010f-4e43-ab7a-b2963efd9678",
+							"raw": "/<UUID>",
 							"path": [
-								"c1449429-010f-4e43-ab7a-b2963efd9678"
+								"<UUID>"
 							]
 						}
 					},
@@ -371,9 +345,9 @@
 							}
 						},
 						"url": {
-							"raw": "/77fe368c-9f29-423e-93fd-26fef3fa348x",
+							"raw": "/<UUID>",
 							"path": [
-								"77fe368c-9f29-423e-93fd-26fef3fa348x"
+								"<UUID>"
 							]
 						}
 					},
@@ -391,9 +365,9 @@
 							}
 						],
 						"url": {
-							"raw": "/77fe368c-9f29-423e-93fd-26fef3fa3486",
+							"raw": "/<UUID>",
 							"path": [
-								"77fe368c-9f29-423e-93fd-26fef3fa3486"
+								"<UUID>"
 							]
 						}
 					},
@@ -535,63 +509,167 @@
 			]
 		},
 		{
-			"name": "/auth/login",
-			"request": {
-				"auth": {
-					"type": "noauth"
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\n    \"username\": \"username\",\n    \"password\": \"userPassword\"\n}",
-					"options": {
-						"raw": {
-							"language": "json"
+			"name": "auth",
+			"item": [
+				{
+					"name": "/register",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user1\",\n    \"email\": \"user1@gmail.com\",\n    \"password\": \"user1PWD\",\n    \"confirmPassword\": \"user1PWD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "/register",
+							"path": [
+								"register"
+							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "/login",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user1\",\n    \"password\": \"user1PWD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "/login",
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/logout",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "/logout",
+							"path": [
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/authenticate",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "user1",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "password",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "/authenticate",
+							"path": [
+								"authenticate"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/changePassword",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TokenUser1}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"currentPassword\": \"user1PWD\",\n    \"newPassword\": \"user1PWDnew\",\n    \"confirmPassword\": \"user1PWDnew\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "/changePassword",
+							"path": [
+								"changePassword"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.request.url.path = [\"api\", \"auth\"].concat(pm.request.url.path);"
+						]
 					}
 				},
-				"url": {
-					"raw": "/api/auth/login",
-					"path": [
-						"api",
-						"auth",
-						"login"
-					]
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							""
+						]
+					}
 				}
-			},
-			"response": []
-		},
-		{
-			"name": "/auth/authenticate",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "password",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "username",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "/api/auth/authenticate",
-					"path": [
-						"api",
-						"auth",
-						"authenticate"
-					]
-				}
-			},
-			"response": []
+			]
 		}
 	],
 	"event": [

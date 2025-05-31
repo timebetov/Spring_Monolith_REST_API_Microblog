@@ -88,65 +88,6 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("should save new user then return HttpStatus.CREATED with specified message")
-    void shouldSaveUserWithValidData() throws Exception {
-
-        CreateUserDTO createUserDTO = CreateUserDTO.builder()
-                .username("benjamin")
-                .email("benjamin@test.com")
-                .password("passwordTesting2025")
-                .confirmPassword("passwordTesting2025")
-                .build();
-
-        mockMvc.perform(MockMvcRequestBuilders.post(usersURI + "create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createUserDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.message", is("User registered successfully")));
-
-        Optional<User> verifyUser = userDao.findByUsername("benjamin");
-        assertTrue(verifyUser.isPresent(), "User not found");
-    }
-
-    @Test
-    @DisplayName("should return HttpStatus.Bad_Request when saving user with blank data")
-    void shouldReturnBadRequestWhenSavingUserWithBlankData() throws Exception {
-
-        mockMvc.perform(MockMvcRequestBuilders.post(usersURI + "create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(CreateUserDTO.builder().build())))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.errorDetails.username", is("Username cannot be blank")))
-                .andExpect(jsonPath("$.errorDetails.email", is("Email Address cannot be blank")))
-                .andExpect(jsonPath("$.errorDetails.password", is("Password must be not blank")))
-                .andExpect(jsonPath("$.errorDetails.confirmPassword", is("Confirm Password must be not blank")));
-    }
-
-    @Test
-    @DisplayName("should return HttpStatus.BAD_REQUEST when saving user with non-valid data")
-    void shouldReturnBadRequestWhenSavingUserWithNonValidData() throws Exception {
-
-        CreateUserDTO invalidEmailDTO = CreateUserDTO.builder()
-                .username("usr")
-                .email("invalidEmailAtTestDotcom")
-                .password("short")
-                .confirmPassword("shorter")
-                .build();
-
-        mockMvc.perform(MockMvcRequestBuilders.post(usersURI + "create")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidEmailDTO)))
-                .andExpect(status().isBadRequest())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.errorDetails.username", is("Username should be at least 4 characters long")))
-                .andExpect(jsonPath("$.errorDetails.email", is("Email is not a valid")))
-                .andExpect(jsonPath("$.errorDetails.password", is("Password must be between 8 and 20 characters long")))
-                .andExpect(jsonPath("$.errorDetails.confirmPassword", is("Passwords do not match!")));
-    }
-
-    @Test
     @DisplayName("should return user information of authenticated user")
     void shouldReturnAuthenticatedUserProfile() throws Exception {
 
@@ -326,7 +267,6 @@ class UserControllerTest {
         UpdateUserDTO reqDto = UpdateUserDTO.builder()
                 .username("usr")
                 .email("nonValidEmail")
-                .password("newPWD")
                 .build();
 
         mockMvc.perform(MockMvcRequestBuilders.put(usersURI + "10")
@@ -334,9 +274,7 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(reqDto)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorDetails.username", is("Username should be at least 4 characters long")))
-                .andExpect(jsonPath("$.errorDetails.email", is("Email is not a valid")))
-                .andExpect(jsonPath("$.errorDetails.password",
-                        is("Password must be between 8 and 20 characters long")));
+                .andExpect(jsonPath("$.errorDetails.email", is("Email is not a valid")));
 
     }
 

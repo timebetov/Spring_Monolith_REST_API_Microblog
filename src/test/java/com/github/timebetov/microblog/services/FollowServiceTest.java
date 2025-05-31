@@ -72,8 +72,8 @@ public class FollowServiceTest {
     }
 
     @Test
-    @DisplayName("should throw IllegalArgumentException when attempting user to follow himself")
-    void shouldThrowIllegalArgumentExceptionWhenFollowUserWithSameId() {
+    @DisplayName("should throw IllegalArgumentException when attempting to follow himself")
+    void shouldThrowIllegalArgumentExceptionWhenFollowingHimself() {
 
         assertThrows(IllegalArgumentException.class, () -> followService.followUser(1L, 1L));
     }

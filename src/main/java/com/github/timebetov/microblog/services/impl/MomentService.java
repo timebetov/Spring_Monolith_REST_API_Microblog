@@ -17,7 +17,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -32,14 +31,14 @@ public class MomentService implements IMomentService {
     public void createMoment(Long authorId, RequestMomentDTO momentDetails) {
 
         User author = userDao.findById(authorId).orElseThrow(
-                () -> new ResourceNotFoundException("User", "userId", String.valueOf(authorId)));
+                () -> new ResourceNotFoundException("User", String.valueOf(authorId)));
 
         Moment momentToSave = MomentMapper.mapRequestMomentDTOToMoment(momentDetails, new Moment());
 
         // Visibility type by default will be `PUBLIC` if not defined
-        if (momentToSave.getVisibility() == null) {
+        if (momentToSave.getVisibility() == null)
             momentToSave.setVisibility(Moment.Visibility.PUBLIC);
-        }
+
         momentToSave.setAuthor(author);
         momentDao.save(momentToSave);
     }
@@ -65,9 +64,8 @@ public class MomentService implements IMomentService {
     @Override
     public List<MomentDTO> getMoments(Long authorId, String visibility, CurrentUserContext currentUser) {
 
-        if (currentUser == null || currentUser.getUserId() == null) {
+        if (currentUser == null || currentUser.getUserId() == null)
             throw new IllegalArgumentException("User is not logged in");
-        }
 
         Moment.Visibility type = (visibility != null)
                 ? Moment.Visibility.valueOf(visibility.trim().toUpperCase())
@@ -78,9 +76,8 @@ public class MomentService implements IMomentService {
                 : (List<Moment>) momentDao.findAll();
 
         if (authorId != null) {
-            if (userDao.findById(authorId).isEmpty()) {
-                throw new ResourceNotFoundException("User", "userId", String.valueOf(authorId));
-            }
+            if (userDao.findById(authorId).isEmpty())
+                throw new ResourceNotFoundException("User", String.valueOf(authorId));
             boolean isFollower = followService.isFollowing(currentUser.getUserId(), authorId);
             return moments.stream()
                     .filter(moment -> moment.getVisibility() == type)
@@ -103,19 +100,17 @@ public class MomentService implements IMomentService {
     @Override
     public MomentDTO getMomentById(UUID momentUUId, CurrentUserContext currentUser) {
 
-        if (currentUser == null || currentUser.getUserId() == null) {
+        if (currentUser == null || currentUser.getUserId() == null)
             throw new IllegalArgumentException("User is not logged in");
-        }
 
         Moment foundMoment = momentDao.findById(momentUUId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "momentUUID", momentUUId.toString()));
+                () -> new ResourceNotFoundException("Moment", momentUUId.toString()));
 
         Long momentAuthorId = foundMoment.getAuthor().getUserId();
         boolean isFollower = followService.isFollowing(currentUser.getUserId(), momentAuthorId);
 
-        if (!foundMoment.getVisibility().canBeViewedBy(currentUser, momentAuthorId, isFollower)) {
+        if (!foundMoment.getVisibility().canBeViewedBy(currentUser, momentAuthorId, isFollower))
             throw new AccessDeniedException("You don't have permission to view this moment");
-        }
 
         return MomentMapper.mapToMomentDTO(foundMoment);
     }
@@ -125,11 +120,11 @@ public class MomentService implements IMomentService {
     public void updateMoment(UUID momentId, RequestMomentDTO momentDetails, Long authorId) {
 
         Moment foundMoment = momentDao.findById(momentId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "id", String.valueOf(momentId)));
+                () -> new ResourceNotFoundException("Moment", String.valueOf(momentId)));
 
-        if (momentDetails.getVisibility() != null) {
+        if (momentDetails.getVisibility() != null)
             foundMoment.setVisibility(Moment.Visibility.valueOf(momentDetails.getVisibility().toUpperCase()));
-        }
+
         foundMoment.setText(momentDetails.getText());
         momentDao.save(foundMoment);
     }
@@ -145,7 +140,6 @@ public class MomentService implements IMomentService {
     public Long getAuthorId(UUID momentUUId) {
 
         return momentDao.findAuthorIdByMomentId(momentUUId).orElseThrow(
-                () -> new ResourceNotFoundException("Moment", "id", momentUUId.toString())
-        );
+                () -> new ResourceNotFoundException("Moment", momentUUId.toString()));
     }
 }

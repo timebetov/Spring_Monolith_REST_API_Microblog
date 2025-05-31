@@ -1,4 +1,4 @@
-package com.github.timebetov.microblog.exceptionHandlers;
+package com.github.timebetov.microblog.handlers;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

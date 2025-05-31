@@ -17,6 +17,9 @@ public interface UserDao extends CrudRepository<User, Long> {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
 
+    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
+
     @Query("""
         SELECT CASE WHEN COUNT(u) > 0 THEN true ELSE false END
         FROM User u

@@ -24,7 +24,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - ./redisdata:/data
+      - redis_data:/data
     deploy:
       resources:
         limits:
@@ -58,10 +58,32 @@ services:
     networks:
       - microblog
 
+  app:
+    build: .
+    container_name: microblog
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_USER_PWD: ${DB_USER_PWD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_USER: ${REDIS_USER}
+      REDIS_USER_PASSWORD: ${REDIS_USER_PASSWORD}
+    networks:
+      - microblog
+
 networks:
   microblog:
     driver: bridge
 
 volumes:
   pgsql_data:
+    driver: local
+  redis_data:
     driver: local

@@ -19,12 +19,10 @@ public class FollowService implements IFollowService {
     @Override
     public boolean isFollowing(Long followerId, Long followedId) {
 
-        if (!userDao.existsById(followedId)) {
-            throw new ResourceNotFoundException("User", "followedId", String.valueOf(followedId));
-        }
-        if (!userDao.existsById(followerId)) {
-            throw new ResourceNotFoundException("User", "followerId", String.valueOf(followerId));
-        }
+        if (!userDao.existsById(followedId))
+            throw new ResourceNotFoundException("User", String.valueOf(followedId));
+        if (!userDao.existsById(followerId))
+            throw new ResourceNotFoundException("User", String.valueOf(followerId));
 
         return followedId.equals(followerId) || userDao.isFollowing(followerId, followedId);
     }
@@ -32,19 +30,11 @@ public class FollowService implements IFollowService {
     @Override
     public boolean followUser(Long followerId, Long followedId) {
 
-        if (followerId.equals(followedId)) {
-            throw new IllegalArgumentException("Follower id cannot be the same as follower id");
-        }
+        if (followerId.equals(followedId))
+            throw new IllegalArgumentException("User cannot follow himself");
 
-        if (!userDao.existsById(followedId)) {
-            throw new ResourceNotFoundException("User", "followedId", String.valueOf(followedId));
-        }
-        if (!userDao.existsById(followerId)) {
-            throw new ResourceNotFoundException("User", "followerId", String.valueOf(followerId));
-        }
-        if (userDao.isFollowing(followerId, followedId)) {
+        if (isFollowing(followerId, followedId))
             return false;
-        }
 
         userDao.insertFollow(followerId, followedId);
         return true;
@@ -53,18 +43,11 @@ public class FollowService implements IFollowService {
     @Override
     public boolean unfollowUser(Long followerId, Long followedId) {
 
-        if (followerId.equals(followedId)) {
-            throw new IllegalArgumentException("Follower id cannot be the same as follower id");
-        }
-        if (!userDao.existsById(followedId)) {
-            throw new ResourceNotFoundException("User", "followedId", String.valueOf(followedId));
-        }
-        if (!userDao.existsById(followerId)) {
-            throw new ResourceNotFoundException("User", "followerId", String.valueOf(followerId));
-        }
-        if (!userDao.isFollowing(followerId, followedId)) {
+        if (followerId.equals(followedId))
+            throw new IllegalArgumentException("User cannot unfollow himself");
+
+        if (!isFollowing(followerId, followedId))
             return false;
-        }
 
         userDao.deleteFollow(followerId, followedId);
         return true;
@@ -73,9 +56,8 @@ public class FollowService implements IFollowService {
     @Override
     public List<UserDTO> getFollowers(Long userId) {
 
-        if (!userDao.existsById(userId)) {
-            throw new ResourceNotFoundException("User", "userId", String.valueOf(userId));
-        }
+        if (!userDao.existsById(userId))
+            throw new ResourceNotFoundException("User", String.valueOf(userId));
 
         return userDao.findFollowers(userId)
                 .stream()
@@ -86,9 +68,8 @@ public class FollowService implements IFollowService {
     @Override
     public List<UserDTO> getFollowings(Long userId) {
 
-        if (!userDao.existsById(userId)) {
-            throw new ResourceNotFoundException("User", "userId", String.valueOf(userId));
-        }
+        if (!userDao.existsById(userId))
+            throw new ResourceNotFoundException("User", String.valueOf(userId));
 
         return userDao.findFollowings(userId)
                 .stream()

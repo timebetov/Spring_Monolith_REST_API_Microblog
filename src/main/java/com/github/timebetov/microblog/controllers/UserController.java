@@ -8,6 +8,11 @@ import com.github.timebetov.microblog.dtos.user.UserDTO;
 import com.github.timebetov.microblog.services.IFollowService;
 import com.github.timebetov.microblog.services.IUserService;
 import com.github.timebetov.microblog.utils.SecurityUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,23 +22,22 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "User Controller", description = "CRUD REST API to GET, UPDATE, DELETE and Follow Controller")
 @RestController
 @RequestMapping(value = "/users", produces = {MediaType.APPLICATION_JSON_VALUE})
 @RequiredArgsConstructor
+@SecurityRequirement(name = "bearerAuth")
 public class UserController {
     
     private final IUserService userService;
     private final IFollowService followService;
 
-    @PostMapping("/create")
-    public ResponseEntity<ResponseDTO> registerUser(@RequestBody @Valid CreateUserDTO requestDTO) {
-
-        userService.createUser(requestDTO);
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(new ResponseDTO(HttpStatus.CREATED, "User registered successfully"));
-    }
-
+    @Operation(summary = "READ User REST API", description = "REST API to retrieve Current authenticated User information")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "400", description = "HTTP Status Bad Request"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/profile")
     public ResponseEntity<UserDTO> getProfile() {
 
@@ -44,6 +48,8 @@ public class UserController {
                 .body(profile);
     }
 
+    @Operation(summary = "READ Users REST API", description = "REST API to retrieve all users")
+    @ApiResponse(responseCode = "200", description = "HTTP Status Ok")
     @GetMapping("/fetch")
     public ResponseEntity<List<UserDTO>> fetchUsers() {
 
@@ -53,6 +59,11 @@ public class UserController {
                 .body(users);
     }
 
+    @Operation(summary = "READ User REST API By Id", description = "REST API to retrieve user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/fetch/{userId}")
     public ResponseEntity<UserDTO> fetchUserById(@PathVariable Long userId) {
 
@@ -62,7 +73,11 @@ public class UserController {
                 .body(foundUser);
     }
 
-
+    @Operation(summary = "READ User REST API By Username", description = "REST API to retrieve user by username")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/fetch/@{username}")
     public ResponseEntity<UserDTO> fetchUserByUsername(@PathVariable String username) {
 
@@ -72,6 +87,11 @@ public class UserController {
                 .body(foundUser);
     }
 
+    @Operation(summary = "READ User REST API By Email", description = "REST API to retrieve user by email")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/fetch/email/{email}")
     public ResponseEntity<UserDTO> fetchUserByEmail(@PathVariable String email) {
 
@@ -81,6 +101,12 @@ public class UserController {
                 .body(foundUser);
     }
 
+    @Operation(summary = "UPDATE User REST API By Id", description = "REST API to update user information by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "400", description = "Bad Request"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @PutMapping("/{userId}")
     public ResponseEntity<ResponseDTO> updateUser(@PathVariable Long userId,
                                                   @RequestBody @Valid UpdateUserDTO userDetails) {
@@ -91,12 +117,23 @@ public class UserController {
                 .body(new ResponseDTO(HttpStatus.OK, "User updated successfully"));
     }
 
+    @Operation(summary = "DELETE User REST API By Id", description = "REST API to DELETE user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "HTTP Status No Content"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @DeleteMapping("/{userId}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Follow user by id REST API", description = "REST API to follow other user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "400", description = "HTTP Status Bad Request"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @PostMapping("/follow/{userId}")
     public ResponseEntity<ResponseDTO> followUser(@PathVariable Long userId) {
 
@@ -114,6 +151,12 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "Unfollow user by id REST API", description = "REST API to unfollow follows user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "HTTP Status No Content"),
+            @ApiResponse(responseCode = "400", description = "HTTP Status Bad Request"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @DeleteMapping("/unfollow/{userId}")
     public ResponseEntity<ResponseDTO> unfollowUser(@PathVariable Long userId) {
 
@@ -131,6 +174,11 @@ public class UserController {
         }
     }
 
+    @Operation(summary = "GET followers by id REST API", description = "REST API to retrieve followers of user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/followers/{userId}")
     public ResponseEntity<List<UserDTO>> getFollowers(@PathVariable Long userId) {
 
@@ -140,6 +188,11 @@ public class UserController {
                 .body(followers);
     }
 
+    @Operation(summary = "GET followings by id REST API", description = "REST API to retrieve followings of user by id")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "HTTP Status Ok"),
+            @ApiResponse(responseCode = "404", description = "HTTP Status Not Found")
+    })
     @GetMapping("/followings/{userId}")
     public ResponseEntity<List<UserDTO>> getFollowings(@PathVariable Long userId) {
 

@@ -1,6 +1,5 @@
 package com.github.timebetov.microblog.services.impl;
 
-import com.github.timebetov.microblog.dtos.user.CreateUserDTO;
 import com.github.timebetov.microblog.dtos.user.UpdateUserDTO;
 import com.github.timebetov.microblog.dtos.user.UserDTO;
 import com.github.timebetov.microblog.exceptions.AlreadyExistsException;
@@ -11,7 +10,6 @@ import com.github.timebetov.microblog.repository.UserDao;
 import com.github.timebetov.microblog.services.IUserService;
 import com.github.timebetov.microblog.validations.OnlyOwnerOrAdmin;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -22,25 +20,6 @@ import java.util.List;
 public class UserService implements IUserService {
 
     private final UserDao userDao;
-    private final PasswordEncoder pwdEncoder;
-
-    @Override
-    public void createUser(CreateUserDTO userDetails) {
-
-        if (userDao.findByUsername(userDetails.getUsername()).isPresent()) {
-            throw new AlreadyExistsException("User", "username", userDetails.getUsername());
-        }
-        if (userDao.findByEmail(userDetails.getEmail()).isPresent()) {
-            throw new AlreadyExistsException("User", "email", userDetails.getEmail() );
-        }
-
-        String hashedPwd = pwdEncoder.encode(userDetails.getPassword());
-
-        User newUser = UserMapper.mapCreateDTOToUser(userDetails, new User());
-        newUser.setPassword(hashedPwd);
-        newUser.setRole(User.Role.USER);
-        userDao.save(newUser);
-    }
 
     @Override
     public List<UserDTO> getAllUsers() {
@@ -54,8 +33,7 @@ public class UserService implements IUserService {
     public UserDTO getByUsername(String username) {
 
         User user = userDao.findByUsername(username).orElseThrow(
-                () -> new ResourceNotFoundException("User", "username", username)
-        );
+                () -> new ResourceNotFoundException("User", username));
         return UserMapper.mapToUserDTO(user);
     }
 
@@ -63,8 +41,7 @@ public class UserService implements IUserService {
     public UserDTO getById(long userId) {
 
         User user = userDao.findById(userId).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", String.valueOf(userId))
-        );
+                () -> new ResourceNotFoundException("User", String.valueOf(userId)));
         return UserMapper.mapToUserDTO(user);
     }
 
@@ -72,8 +49,7 @@ public class UserService implements IUserService {
     public UserDTO getByEmail(String email) {
 
         User user = userDao.findByEmail(email).orElseThrow(
-                () -> new ResourceNotFoundException("User", "email", email)
-        );
+                () -> new ResourceNotFoundException("User", email));
         return UserMapper.mapToUserDTO(user);
     }
 
@@ -82,16 +58,25 @@ public class UserService implements IUserService {
     public void updateUser(Long userId, UpdateUserDTO userDetails) {
 
         User updatedUser = userDao.findById(userId).orElseThrow(
-                () -> new ResourceNotFoundException("User", "id", String.valueOf(userId))
-        );
-        if (userDetails.getUsername() != null && !userDetails.getUsername().equals(updatedUser.getUsername())) {
-            if (userDao.findByUsername(userDetails.getUsername()).isPresent()) {
-                throw new AlreadyExistsException("User", "username", userDetails.getUsername());
+                () -> new ResourceNotFoundException("User", String.valueOf(userId)));
+
+        boolean isUsernameNotNull = userDetails.getUsername() != null;
+        if (isUsernameNotNull) {
+            boolean isUsernameNotSame = !userDetails.getUsername().equals(updatedUser.getUsername());
+            if (isUsernameNotSame) {
+                boolean isUsernameAlreadyTaken = userDao.existsByUsername(userDetails.getUsername());
+                if (isUsernameAlreadyTaken)
+                    throw new AlreadyExistsException("User", userDetails.getUsername());
             }
         }
-        if (userDetails.getEmail() != null && !userDetails.getEmail().equals(updatedUser.getEmail())) {
-            if (userDao.findByEmail(userDetails.getEmail()).isPresent()) {
-                throw new AlreadyExistsException("User", "email", userDetails.getEmail());
+
+        boolean isEmailNotNull = userDetails.getEmail() != null;
+        if (isEmailNotNull) {
+            boolean isEmailNotSame = !userDetails.getEmail().equals(updatedUser.getEmail());
+            if (isEmailNotSame) {
+                boolean isEmailAlreadyTaken = userDao.existsByEmail(userDetails.getEmail());
+                if (isEmailAlreadyTaken)
+                    throw new AlreadyExistsException("User", userDetails.getEmail());
             }
         }
 
@@ -103,9 +88,9 @@ public class UserService implements IUserService {
     @Override
     public void deleteUser(Long userId) {
 
-        if (userDao.findById(userId).isEmpty()) {
-            throw new ResourceNotFoundException("User", "id", String.valueOf(userId));
-        }
+        if (!userDao.existsById(userId))
+            throw new ResourceNotFoundException("User", String.valueOf(userId));
+
         userDao.deleteById(userId);
     }
 }

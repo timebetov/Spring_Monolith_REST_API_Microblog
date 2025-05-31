@@ -94,6 +94,12 @@ public class JwtTokenValidatorFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-        return List.of("/auth/login", "/auth/authenticate", "/users/create").contains(request.getServletPath());
+        String path = request.getServletPath();
+
+        return path.startsWith("/swagger-ui")
+                || path.startsWith("/v3/api-docs")
+                || path.equals("/auth/login")
+                || path.equals("/auth/authenticate")
+                || path.equals("/auth/register");
     }
 }

@@ -16,7 +16,6 @@ public class UserMapper {
         userDTO.setUsername(user.getUsername());
         userDTO.setEmail(user.getEmail());
         userDTO.setBio(user.getBio());
-        userDTO.setPicture(user.getPicture());
         userDTO.setRole(user.getRole().name());
         if (user.getFollowers() != null) {
             userDTO.setFollowers(user.getFollowers().size());
@@ -34,7 +33,6 @@ public class UserMapper {
 
         user.setUsername(userDTO.getUsername());
         user.setEmail(userDTO.getEmail());
-        user.setPassword(userDTO.getPassword());
         return user;
     }
 
@@ -46,14 +44,8 @@ public class UserMapper {
         if (userDTO.getEmail() != null && !userDTO.getEmail().isBlank()) {
             user.setEmail(userDTO.getEmail());
         }
-        if (userDTO.getPassword() != null && !userDTO.getPassword().isBlank()) {
-            user.setPassword(userDTO.getPassword());
-        }
         if (userDTO.getBio() != null && !userDTO.getBio().isBlank()) {
             user.setBio(userDTO.getBio());
-        }
-        if (userDTO.getPicture() != null && !userDTO.getPicture().isBlank()) {
-            user.setPicture(userDTO.getPicture());
         }
         return user;
 

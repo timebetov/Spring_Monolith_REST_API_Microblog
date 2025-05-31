@@ -1,6 +1,5 @@
 package com.github.timebetov.microblog.services;
 
-import com.github.timebetov.microblog.dtos.user.CreateUserDTO;
 import com.github.timebetov.microblog.dtos.user.UpdateUserDTO;
 import com.github.timebetov.microblog.dtos.user.UserDTO;
 import com.github.timebetov.microblog.exceptions.AlreadyExistsException;
@@ -30,9 +29,6 @@ class UserServiceTest {
     @Mock
     private UserDao userDao;
 
-    @Mock
-    private PasswordEncoder passwordEncoder;
-
     @InjectMocks
     private UserService userService;
 
@@ -55,63 +51,6 @@ class UserServiceTest {
                 .password("Alexkey2@25pwd")
                 .role(User.Role.USER)
                 .build();
-    }
-
-    @Test
-    @DisplayName("should save new user when username and email are unique")
-    void shouldCreateAndSaveUserWhenUsernameAndEmailAreUnique() {
-
-        CreateUserDTO createUserDTO = CreateUserDTO.builder()
-                .username("alexkey")
-                .email("alex@gmail.com")
-                .password("Alexkey2@25pwd")
-                .build();
-
-        when(userDao.findByUsername(createUserDTO.getUsername())).thenReturn(Optional.empty());
-        when(userDao.findByEmail(createUserDTO.getEmail())).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> userService.createUser(createUserDTO));
-        verify(userDao, times(1)).save(any(User.class));
-
-        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
-        verify(userDao).save(userCaptor.capture());
-
-        User savedUser = userCaptor.getValue();
-        assertEquals("alexkey", savedUser.getUsername());
-        assertEquals("alex@gmail.com", savedUser.getEmail());
-        assertEquals(User.Role.USER, savedUser.getRole());
-    }
-
-    @Test
-    @DisplayName("should throw an AlreadyExistsException when saving new user due to email has already taken")
-    void shouldThrowEmailAlreadyExistsExceptionWhenSavingUser() {
-
-        CreateUserDTO createUserDTO = CreateUserDTO.builder()
-                .username("alexkey")
-                .email("alex@gmail.com")
-                .password("Alexkey2@25pwd")
-                .build();
-
-        when(userDao.findByEmail(anyString())).thenReturn(Optional.of(user));
-
-        assertThrows(AlreadyExistsException.class, () -> userService.createUser(createUserDTO));
-        verify(userDao, times(1)).findByEmail(anyString());
-    }
-
-    @Test
-    @DisplayName("should throw an AlreadyExistsException when saving new user due to username has already taken")
-    void shouldThrowUsernameAlreadyExistsExceptionWhenSavingUser() {
-
-        CreateUserDTO createUserDTO = CreateUserDTO.builder()
-                .username("alexkey")
-                .email("alex@gmail.com")
-                .password("Alexkey2@25pwd")
-                .build();
-
-        when(userDao.findByUsername(anyString())).thenReturn(Optional.of(user));
-
-        assertThrows(AlreadyExistsException.class, () -> userService.createUser(createUserDTO));
-        verify(userDao, times(1)).findByUsername(anyString());
     }
 
     @Test
@@ -218,18 +157,17 @@ class UserServiceTest {
         UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
                 .username("updatedalexkey")
                 .email("updalex@gmail.com")
-                .password("newpassword")
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(user));
-        when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
-        when(userDao.findByEmail(any(String.class))).thenReturn(Optional.empty());
+        when(userDao.existsByUsername(any(String.class))).thenReturn(false);
+        when(userDao.existsByEmail(any(String.class))).thenReturn(false);
 
         assertDoesNotThrow(() -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
-        verify(userDao, times(1)).findByUsername(any(String.class));
-        verify(userDao, times(1)).findByEmail(any(String.class));
+        verify(userDao, times(1)).existsByUsername(any(String.class));
+        verify(userDao, times(1)).existsByEmail(any(String.class));
 
         verify(userDao, times(1)).save(any(User.class));
 
@@ -239,7 +177,6 @@ class UserServiceTest {
         User savedUser = userCaptor.getValue();
         assertEquals("updatedalexkey", savedUser.getUsername());
         assertEquals("updalex@gmail.com", savedUser.getEmail());
-        assertEquals("newpassword", savedUser.getPassword());
     }
 
     @Test
@@ -256,26 +193,19 @@ class UserServiceTest {
     @DisplayName("should throw an AlreadyExistsException when updating due to username has already taken")
     void shouldThrowUsernameAlreadyExistsExceptionWhenUpdatingUser() {
 
-        User toUpdate = User.builder()
+        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
                 .username("testusername")
                 .email("testemail@gmail.com")
-                .role(User.Role.USER)
                 .build();
 
-        UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
-                .username("alexkey")
-                .email("updalex@gmail.com")
-                .password("newpassword")
-                .build();
+        when(userDao.findById(1L)).thenReturn(Optional.of(user));
 
-        when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
-
-        when(userDao.findByUsername(any(String.class))).thenReturn(Optional.of(user));
+        when(userDao.existsByUsername(any(String.class))).thenReturn(true);
 
         assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
-        verify(userDao, times(1)).findByUsername(any(String.class));
+        verify(userDao, times(1)).existsByUsername(any(String.class));
     }
 
     @Test
@@ -291,27 +221,26 @@ class UserServiceTest {
         UpdateUserDTO updateUserDTO = UpdateUserDTO.builder()
                 .username("alexkey")
                 .email("alex@gmail.com")
-                .password("newpassword")
                 .build();
 
         when(userDao.findById(1L)).thenReturn(Optional.of(toUpdate));
-        when(userDao.findByUsername(any(String.class))).thenReturn(Optional.empty());
-        when(userDao.findByEmail(any(String.class))).thenReturn(Optional.of(user));
+        when(userDao.existsByUsername(any(String.class))).thenReturn(false);
+        when(userDao.existsByEmail(any(String.class))).thenReturn(true);
 
         assertThrows(AlreadyExistsException.class, () -> userService.updateUser(1L, updateUserDTO));
 
         verify(userDao, times(1)).findById(1L);
-        verify(userDao, times(1)).findByUsername(any(String.class));
-        verify(userDao, times(1)).findByEmail(any(String.class));
+        verify(userDao, times(1)).existsByUsername(any(String.class));
+        verify(userDao, times(1)).existsByEmail(any(String.class));
     }
 
     @Test
     @DisplayName("should delete user by given id")
     void shouldDeleteUserById() {
 
-        when(userDao.findById(1L)).thenReturn(Optional.of(user));
+        when(userDao.existsById(1L)).thenReturn(true);
         assertDoesNotThrow(() -> userService.deleteUser(1L));
-        verify(userDao, times(1)).findById(1L);
+        verify(userDao, times(1)).existsById(1L);
         verify(userDao, times(1)).deleteById(1L);
     }
 
@@ -319,8 +248,8 @@ class UserServiceTest {
     @DisplayName("should throw an ResourceNotFoundException when deleting not existing user")
     void shouldThrowResourceNotFoundExceptionWhenDeletingUserById() {
 
-        when(userDao.findById(0L)).thenReturn(Optional.empty());
+        when(userDao.existsById(0L)).thenReturn(false);
         assertThrows(ResourceNotFoundException.class, () -> userService.deleteUser(0L));
-        verify(userDao, times(1)).findById(0L);
+        verify(userDao, times(1)).existsById(0L);
     }
 }

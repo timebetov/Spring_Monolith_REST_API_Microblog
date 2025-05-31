@@ -1,4 +1,4 @@
-package com.github.timebetov.microblog.exceptionHandlers;
+package com.github.timebetov.microblog.handlers;
 
 import com.github.timebetov.microblog.dtos.ErrorResponseDTO;
 import com.github.timebetov.microblog.exceptions.AlreadyExistsException;
@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
@@ -43,12 +44,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.BAD_REQUEST)
-                .errorDetails(errors)
-                .errorTime(LocalDateTime.now())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withDetailsAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, errors);
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
     }
@@ -56,12 +54,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> handleUsernameNotFoundException(UsernameNotFoundException ex, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.NOT_FOUND)
-                .errorTime(LocalDateTime.now())
-                .errorMessage(ex.getMessage())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.NOT_FOUND, ex.getMessage());
 
         return new ResponseEntity<>(result, HttpStatus.NOT_FOUND);
     }
@@ -69,12 +64,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException ex, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.FORBIDDEN)
-                .errorTime(LocalDateTime.now())
-                .errorMessage(ex.getMessage())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.FORBIDDEN, ex.getMessage());
 
         return new ResponseEntity<>(result, HttpStatus.FORBIDDEN);
     }
@@ -82,12 +74,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(IllegalArgumentException ex, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.BAD_REQUEST)
-                .errorTime(LocalDateTime.now())
-                .errorMessage(ex.getMessage())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, ex.getMessage());
+
+        return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponseDTO> handleBadCredentialsException(BadCredentialsException ex, WebRequest request) {
+
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, ex.getMessage());
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
     }
@@ -102,12 +101,9 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             errors.put(path, message);
         });
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.BAD_REQUEST)
-                .errorDetails(errors)
-                .errorTime(LocalDateTime.now())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withDetailsAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, errors);
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
     }
@@ -115,12 +111,10 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ErrorResponseDTO> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.BAD_REQUEST)
-                .errorTime(LocalDateTime.now())
-                .errorMessage(ex.getName())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, ex.getMessage()
+        );
 
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
     }
@@ -128,36 +122,28 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponseDTO> notFoundHandler(ResourceNotFoundException e, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.NOT_FOUND)
-                .errorMessage(e.getMessage())
-                .errorTime(LocalDateTime.now())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.NOT_FOUND, e.getMessage());
+
         return new ResponseEntity<>(result, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AlreadyExistsException.class)
     public ResponseEntity<ErrorResponseDTO> alreadyExistsHandler(AlreadyExistsException e, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.BAD_REQUEST)
-                .errorMessage(e.getMessage())
-                .errorTime(LocalDateTime.now())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false),
+                HttpStatus.BAD_REQUEST, e.getMessage());
+
         return new ResponseEntity<>(result, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> exceptionHandler(Exception e, WebRequest request) {
 
-        ErrorResponseDTO result = ErrorResponseDTO.builder()
-                .apiPath(request.getDescription(false).replace("uri=", ""))
-                .errorCode(HttpStatus.INTERNAL_SERVER_ERROR)
-                .errorMessage(e.getMessage())
-                .errorTime(LocalDateTime.now())
-                .build();
+        ErrorResponseDTO result = ErrorResponseDTO.withMsgAndCode(
+                request.getDescription(false), HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         return new ResponseEntity<>(result, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
