@@ -51,4 +51,4 @@ docker-compose up --build
 ```
 4. The application will be available at http://localhost:8080
 5. Open Swagger UI in your browser to explore API endpoints:
-[http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
+[http://localhost:8080/api/swagger-ui/index.html](http://localhost:8080/api/swagger-ui/index.html)
